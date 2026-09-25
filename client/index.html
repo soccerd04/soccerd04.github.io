@@ -3,46 +3,75 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SoW Fact Check</title>
+    <meta
+      name="description"
+      content="A vintage detective-inspired fact checker for consulting deliverables."
+    />
+    <title>The Nancy Drew Files</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <div class="top-stripe" aria-hidden="true"></div>
     <main>
-      <header>
-        <p class="kicker">Consulting SoW helper</p>
-        <h1>Fact-check an AI deliverable</h1>
+      <header class="masthead">
+        <div class="magnifier" aria-hidden="true">⌕</div>
+        <p class="edition">Case desk · Confidential review</p>
+        <h1><span>The</span> Nancy Drew Files</h1>
+        <p class="tagline">A consulting document mystery</p>
         <p class="lede">
-          Paste trusted reference material on the left and the AI-generated draft on the
-          right. The server asks an LLM whether the draft invents or contradicts facts.
+          Every claim leaves a clue. Compare your source of truth with an AI-generated
+          deliverable and uncover contradictions, invented facts, and suspicious details.
         </p>
       </header>
 
       <form id="fact-check-form">
+        <div class="case-heading">
+          <span>Case No. 001</span>
+          <strong>The Case of the Questionable Deliverable</strong>
+          <span id="case-date"></span>
+        </div>
         <div class="grid">
-          <label>
-            Reference material
+          <label class="evidence-card evidence-reference">
+            <span class="card-number">Exhibit A</span>
+            <span class="card-title">Trusted reference material</span>
+            <span class="card-note">The facts as we know them</span>
             <textarea
               id="reference"
               name="reference"
               required
-              placeholder="Source of truth: notes, contract, SoW facts, meeting recap…"
+              placeholder="Paste the source of truth: contract terms, approved notes, SoW facts, meeting recap…"
             ></textarea>
           </label>
-          <label>
-            AI-generated deliverable
+          <label class="evidence-card evidence-draft">
+            <span class="card-number">Exhibit B</span>
+            <span class="card-title">AI-generated deliverable</span>
+            <span class="card-note">The document under investigation</span>
             <textarea
               id="deliverable"
               name="deliverable"
               required
-              placeholder="Draft SoW, summary, or other generated document…"
+              placeholder="Paste the draft SoW, summary, or other generated document…"
             ></textarea>
           </label>
         </div>
-        <button type="submit" id="submit-btn">Run fact check</button>
+        <div class="action-row">
+          <p>
+            Powered by Cloudflare Workers AI · No API key required · Do not submit
+            client-confidential material without organizational approval
+          </p>
+          <button type="submit" id="submit-btn">
+            <span aria-hidden="true">⌕</span> Investigate the facts
+          </button>
+        </div>
       </form>
 
       <section id="status" class="status" hidden></section>
       <section id="results" hidden></section>
+
+      <footer>
+        <span>Private eye for consulting details</span>
+        <span>Unofficial detective-inspired project</span>
+      </footer>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

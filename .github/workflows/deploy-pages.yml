@@ -26,7 +26,7 @@ jobs:
       - run: npm ci
       - run: npm run build -w client
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_API_URL: https://nancy-drew-fact-check.silly-capacity-50d.workers.dev
       - uses: actions/upload-pages-artifact@v3
         with:
           path: client/dist

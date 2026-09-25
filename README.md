@@ -1,11 +1,10 @@
-# SoW fact-check shell
+# The Nancy Drew Files
 
-Rough Node.js client + server. Paste **reference material** and an **AI-generated deliverable**. The server sends both to an LLM and returns fact-check issues.
+A vintage detective-inspired consulting fact checker. Paste **reference material** and an **AI-generated deliverable**. A Cloudflare Worker uses Workers AI to identify unsupported or contradictory claims.
 
 ## Run locally
 
-1. Copy `.env.example` to `.env` and set `OPENAI_API_KEY`.
-2. In a new terminal (so Node is on PATH after the admin install):
+No external AI API key is required. Workers AI uses the `AI` binding on your Cloudflare account.
 
 ```powershell
 cd "$env:USERPROFILE\Documents\AI innovation"
@@ -13,7 +12,7 @@ npm install
 npm run dev
 ```
 
-3. Open [http://localhost:5173](http://localhost:5173). The UI proxies `/api` to the server on port 3001.
+Open [http://localhost:5173](http://localhost:5173). The UI proxies `/api` to Wrangler on port 8787. Wrangler may ask you to authenticate with Cloudflare because local AI inference still runs on Cloudflare.
 
 If `node` is still not recognized, use:
 
@@ -36,10 +35,21 @@ git push -u github-io main
 
 3. In that repo: **Settings → Pages → Source: GitHub Actions**.
 
-The form will load for anyone. **Run fact check** still needs the Node server on a host that can keep `OPENAI_API_KEY` secret. After that exists, set Actions variable `VITE_API_URL` to the API origin (no trailing slash) and redeploy.
+Set the GitHub Actions variable `VITE_API_URL` to the deployed Worker's origin (no trailing slash), then redeploy Pages.
+
+## Cloudflare Worker
+
+The Worker uses `@cf/meta/llama-3.3-70b-instruct-fp8-fast` through a Workers AI binding. No API key is stored in this repository.
+
+```powershell
+npm run worker:deploy
+```
+
+Cloudflare currently includes 10,000 free Workers AI neurons per day. Long documents consume more of that allocation. Review Cloudflare's data-processing terms and your organization's policy before submitting client-confidential material.
 
 ## Layout
 
 - `client/` — Vite page with two text areas
-- `server/` — Express `POST /api/fact-check`
-- `.env` — API key (never commit this)
+- `worker/` — Cloudflare Worker with `POST /api/fact-check`
+
+This is an unofficial, detective-inspired project and is not affiliated with the Nancy Drew rights holders.

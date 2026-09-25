@@ -1,8 +1,18 @@
 :root {
-  font-family: "Segoe UI", system-ui, sans-serif;
-  color: #12202b;
-  background: #f4f1ea;
-  line-height: 1.45;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #183b4e;
+  background: #f5e9ad;
+  line-height: 1.5;
+  font-synthesis: none;
+  --ink: #183b4e;
+  --blue: #6f9eb7;
+  --blue-light: #d8eaf0;
+  --green: #7f9e83;
+  --green-light: #dce8d4;
+  --yellow: #f5e9ad;
+  --paper: #fffaf0;
+  --red: #a85f54;
+  --shadow: rgba(24, 59, 78, 0.18);
 }
 
 * {
@@ -10,38 +20,350 @@
 }
 
 body {
+  min-width: 320px;
+  min-height: 100vh;
   margin: 0;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.5), transparent 28rem),
+    repeating-linear-gradient(
+      0deg,
+      rgba(66, 80, 52, 0.025) 0,
+      rgba(66, 80, 52, 0.025) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    var(--yellow);
+}
+
+.top-stripe {
+  height: 10px;
+  background: linear-gradient(
+    90deg,
+    var(--blue) 0 36%,
+    var(--paper) 36% 39%,
+    var(--green) 39% 72%,
+    var(--paper) 72% 75%,
+    #e6c969 75%
+  );
+  border-bottom: 2px solid var(--ink);
 }
 
 main {
-  max-width: 1100px;
+  width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 4rem;
+  padding: 2.5rem 0 2rem;
 }
 
-.kicker {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
-  color: #5b6b75;
+.masthead {
+  position: relative;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.edition {
   margin: 0 0 0.4rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 h1 {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2.6rem, 8vw, 5.6rem);
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+  text-shadow: 2px 2px 0 var(--paper);
+}
+
+h1 span {
+  display: block;
+  margin-bottom: 0.1rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.18em;
+  font-style: normal;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+}
+
+.tagline {
+  display: inline-block;
+  margin: 0.9rem 0 0;
+  padding: 0.2rem 1rem;
+  transform: rotate(-1deg);
+  background: var(--green);
+  color: #fffdf3;
+  font-family: "Courier New", monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .lede {
-  margin: 0 0 1.75rem;
-  max-width: 42rem;
-  color: #33414a;
+  max-width: 680px;
+  margin: 1.25rem auto 0;
+  color: #365464;
+  font-size: 1.03rem;
+}
+
+.magnifier {
+  position: absolute;
+  top: -0.8rem;
+  right: 3%;
+  transform: rotate(-12deg);
+  color: var(--blue);
+  font-family: Arial, sans-serif;
+  font-size: 5rem;
+  font-weight: 300;
+  opacity: 0.5;
+}
+
+form {
+  position: relative;
+  padding: 1.35rem;
+  border: 2px solid var(--ink);
+  background: rgba(255, 250, 240, 0.84);
+  box-shadow: 8px 8px 0 var(--blue);
+}
+
+.case-heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  margin: -1.35rem -1.35rem 1.35rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 2px solid var(--ink);
+  background: var(--green-light);
+  font-family: "Courier New", monospace;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.case-heading strong {
+  text-align: center;
 }
 
 .grid {
   display: grid;
-  gap: 1rem;
   grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.evidence-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.15rem;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 3px 4px 0 var(--shadow);
+}
+
+.evidence-reference {
+  transform: rotate(-0.25deg);
+}
+
+.evidence-draft {
+  transform: rotate(0.25deg);
+}
+
+.card-number {
+  align-self: flex-start;
+  margin: -0.4rem 0 0.6rem;
+  padding: 0.13rem 0.48rem;
+  background: var(--blue);
+  color: white;
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.evidence-draft .card-number {
+  background: var(--green);
+}
+
+.card-title {
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.card-note {
+  margin-bottom: 0.8rem;
+  color: #66766c;
+  font-size: 0.82rem;
+  font-style: italic;
+  font-weight: 400;
+}
+
+textarea {
+  min-height: 300px;
+  resize: vertical;
+  padding: 1rem;
+  border: 1px solid #9aa69b;
+  border-radius: 0;
+  outline: none;
+  background:
+    repeating-linear-gradient(
+      transparent 0,
+      transparent 25px,
+      rgba(111, 158, 183, 0.16) 25px,
+      rgba(111, 158, 183, 0.16) 26px
+    ),
+    #fffef9;
+  color: #263d45;
+  font: 0.92rem/26px "Courier New", monospace;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(111, 158, 183, 0.25);
+}
+
+textarea::placeholder {
+  color: #8a918a;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.35rem;
+}
+
+.action-row p {
+  margin: 0;
+  color: #66766c;
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+}
+
+button {
+  padding: 0.72rem 1.2rem;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  box-shadow: 3px 3px 0 var(--green);
+  color: white;
+  font: 700 0.8rem "Courier New", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 120ms, box-shadow 120ms;
+}
+
+button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--green);
+}
+
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--green);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.status,
+#results {
+  margin-top: 1.7rem;
+  padding: 1.2rem 1.35rem;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 6px 6px 0 var(--green);
+}
+
+.status {
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+}
+
+#results::before {
+  display: block;
+  margin-bottom: 0.8rem;
+  content: "INVESTIGATOR'S REPORT";
+  color: #60736a;
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.verdict {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid currentColor;
+  font-family: "Courier New", monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.verdict.pass {
+  background: var(--green-light);
+  color: #365f42;
+}
+
+.verdict.issues_found {
+  background: #f2d9c9;
+  color: #854a42;
+}
+
+.issue {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed #86958b;
+  background: #fffdf7;
+}
+
+.issue h3 {
+  margin: 0 0 0.35rem;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.issue p {
+  margin: 0.4rem 0;
+}
+
+.severity {
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(24, 59, 78, 0.35);
+  color: #5f7168;
+  font-family: "Courier New", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 @media (min-width: 800px) {
@@ -50,79 +372,39 @@ h1 {
   }
 }
 
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  font-weight: 600;
-}
+@media (max-width: 650px) {
+  main {
+    width: min(100% - 1rem, 1120px);
+    padding-top: 1.8rem;
+  }
 
-textarea {
-  min-height: 280px;
-  resize: vertical;
-  padding: 0.85rem;
-  border: 1px solid #c9c2b4;
-  border-radius: 8px;
-  font: inherit;
-  background: #fffdf8;
-}
+  .magnifier {
+    display: none;
+  }
 
-button {
-  margin-top: 1rem;
-  background: #123c4a;
-  color: #fff;
-  border: 0;
-  border-radius: 8px;
-  padding: 0.7rem 1.1rem;
-  font: inherit;
-  cursor: pointer;
-}
+  form {
+    padding: 0.85rem;
+    box-shadow: 4px 5px 0 var(--blue);
+  }
 
-button:disabled {
-  opacity: 0.65;
-  cursor: wait;
-}
+  .case-heading {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+    margin: -0.85rem -0.85rem 1rem;
+    text-align: center;
+  }
 
-.status,
-#results {
-  margin-top: 1.5rem;
-  background: #fffdf8;
-  border: 1px solid #c9c2b4;
-  border-radius: 8px;
-  padding: 1rem 1.1rem;
-}
+  .case-heading strong {
+    order: -1;
+  }
 
-.verdict {
-  display: inline-block;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  margin-bottom: 0.75rem;
-}
+  .action-row,
+  footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
 
-.verdict.pass {
-  background: #d9f0df;
-  color: #1d5c32;
-}
-
-.verdict.issues_found {
-  background: #f8ddd6;
-  color: #8a2b16;
-}
-
-.issue {
-  border-top: 1px solid #e4ddd0;
-  padding: 0.85rem 0 0.2rem;
-}
-
-.issue h3 {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
-}
-
-.severity {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #6a5748;
+  button {
+    width: 100%;
+  }
 }

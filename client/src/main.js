@@ -2,11 +2,18 @@ const form = document.querySelector("#fact-check-form");
 const statusEl = document.querySelector("#status");
 const resultsEl = document.querySelector("#results");
 const submitBtn = document.querySelector("#submit-btn");
+const caseDateEl = document.querySelector("#case-date");
 const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+caseDateEl.textContent = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+}).format(new Date());
 
 if (import.meta.env.PROD && !apiBase) {
   setStatus(
-    "This page is public on GitHub Pages. Fact check still needs a hosted Node API (VITE_API_URL). Locally, use npm run dev."
+    "Case desk is open. Online investigations will begin once the Cloudflare Worker URL is connected."
   );
 }
 
@@ -15,7 +22,7 @@ form.addEventListener("submit", async (event) => {
   const reference = document.querySelector("#reference").value.trim();
   const deliverable = document.querySelector("#deliverable").value.trim();
 
-  setStatus("Running fact check…");
+  setStatus("Examining the evidence and following every clue…");
   resultsEl.hidden = true;
   submitBtn.disabled = true;
 
@@ -59,12 +66,12 @@ function renderResults(data) {
         </article>`
         )
         .join("")
-    : "<p>No fact-check issues reported.</p>";
+    : "<p>No suspicious facts uncovered. The evidence supports this deliverable.</p>";
 
   resultsEl.hidden = false;
   resultsEl.innerHTML = `
     <span class="verdict ${escapeHtml(data.verdict || "issues_found")}">${escapeHtml(
-      data.verdict === "pass" ? "Pass" : "Issues found"
+      data.verdict === "pass" ? "Case cleared" : "Clues uncovered"
     )}</span>
     <p>${escapeHtml(data.summary || "")}</p>
     ${issueHtml}
