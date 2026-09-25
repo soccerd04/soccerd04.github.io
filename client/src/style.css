@@ -1,18 +1,19 @@
 :root {
   font-family: Georgia, "Times New Roman", serif;
-  color: #183b4e;
-  background: #f5e9ad;
+  color: #2d2d2d;
+  background: #f7f3ef;
   line-height: 1.5;
   font-synthesis: none;
-  --ink: #183b4e;
-  --blue: #6f9eb7;
-  --blue-light: #d8eaf0;
-  --green: #7f9e83;
-  --green-light: #dce8d4;
-  --yellow: #f5e9ad;
-  --paper: #fffaf0;
-  --red: #a85f54;
-  --shadow: rgba(24, 59, 78, 0.18);
+  --ink: #2d2d2d;
+  --orange: #d04a02;
+  --orange-light: #f7dfcf;
+  --red: #e0301e;
+  --rose: #db536a;
+  --yellow: #ffb600;
+  --burgundy: #602320;
+  --cream: #f7f3ef;
+  --paper: #fffaf2;
+  --shadow: rgba(96, 35, 32, 0.18);
 }
 
 * {
@@ -27,23 +28,23 @@ body {
     radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.5), transparent 28rem),
     repeating-linear-gradient(
       0deg,
-      rgba(66, 80, 52, 0.025) 0,
-      rgba(66, 80, 52, 0.025) 1px,
+      rgba(96, 35, 32, 0.025) 0,
+      rgba(96, 35, 32, 0.025) 1px,
       transparent 1px,
       transparent 4px
     ),
-    var(--yellow);
+    var(--cream);
 }
 
 .top-stripe {
   height: 10px;
   background: linear-gradient(
     90deg,
-    var(--blue) 0 36%,
-    var(--paper) 36% 39%,
-    var(--green) 39% 72%,
-    var(--paper) 72% 75%,
-    #e6c969 75%
+    var(--yellow) 0 21%,
+    var(--orange) 21% 48%,
+    var(--red) 48% 72%,
+    var(--rose) 72% 88%,
+    var(--burgundy) 88%
   );
   border-bottom: 2px solid var(--ink);
 }
@@ -95,7 +96,7 @@ h1 span {
   margin: 0.9rem 0 0;
   padding: 0.2rem 1rem;
   transform: rotate(-1deg);
-  background: var(--green);
+  background: var(--orange);
   color: #fffdf3;
   font-family: "Courier New", monospace;
   font-size: 0.82rem;
@@ -107,7 +108,7 @@ h1 span {
 .lede {
   max-width: 680px;
   margin: 1.25rem auto 0;
-  color: #365464;
+  color: #5b4a47;
   font-size: 1.03rem;
 }
 
@@ -116,7 +117,7 @@ h1 span {
   top: -0.8rem;
   right: 3%;
   transform: rotate(-12deg);
-  color: var(--blue);
+  color: var(--red);
   font-family: Arial, sans-serif;
   font-size: 5rem;
   font-weight: 300;
@@ -128,7 +129,7 @@ form {
   padding: 1.35rem;
   border: 2px solid var(--ink);
   background: rgba(255, 250, 240, 0.84);
-  box-shadow: 8px 8px 0 var(--blue);
+  box-shadow: 8px 8px 0 var(--yellow);
 }
 
 .case-heading {
@@ -139,7 +140,7 @@ form {
   margin: -1.35rem -1.35rem 1.35rem;
   padding: 0.7rem 1rem;
   border-bottom: 2px solid var(--ink);
-  background: var(--green-light);
+  background: var(--orange-light);
   font-family: "Courier New", monospace;
   font-size: 0.76rem;
   letter-spacing: 0.05em;
@@ -178,7 +179,7 @@ form {
   align-self: flex-start;
   margin: -0.4rem 0 0.6rem;
   padding: 0.13rem 0.48rem;
-  background: var(--blue);
+  background: var(--orange);
   color: white;
   font-family: "Courier New", monospace;
   font-size: 0.7rem;
@@ -188,7 +189,7 @@ form {
 }
 
 .evidence-draft .card-number {
-  background: var(--green);
+  background: var(--rose);
 }
 
 .card-title {
@@ -199,7 +200,7 @@ form {
 
 .card-note {
   margin-bottom: 0.8rem;
-  color: #66766c;
+  color: #76635e;
   font-size: 0.82rem;
   font-style: italic;
   font-weight: 400;
@@ -216,18 +217,18 @@ textarea {
     repeating-linear-gradient(
       transparent 0,
       transparent 25px,
-      rgba(111, 158, 183, 0.16) 25px,
-      rgba(111, 158, 183, 0.16) 26px
+      rgba(208, 74, 2, 0.13) 25px,
+      rgba(208, 74, 2, 0.13) 26px
     ),
     #fffef9;
-  color: #263d45;
+  color: #3f3533;
   font: 0.92rem/26px "Courier New", monospace;
   transition: border-color 150ms, box-shadow 150ms;
 }
 
 textarea:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(111, 158, 183, 0.25);
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(208, 74, 2, 0.2);
 }
 
 textarea::placeholder {
@@ -245,7 +246,7 @@ textarea::placeholder {
 
 .action-row p {
   margin: 0;
-  color: #66766c;
+  color: #76635e;
   font-family: "Courier New", monospace;
   font-size: 0.7rem;
 }
@@ -254,8 +255,8 @@ button {
   padding: 0.72rem 1.2rem;
   border: 2px solid var(--ink);
   border-radius: 0;
-  background: var(--ink);
-  box-shadow: 3px 3px 0 var(--green);
+  background: var(--burgundy);
+  box-shadow: 3px 3px 0 var(--yellow);
   color: white;
   font: 700 0.8rem "Courier New", monospace;
   letter-spacing: 0.08em;
@@ -266,12 +267,12 @@ button {
 
 button:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0 var(--green);
+  box-shadow: 5px 5px 0 var(--yellow);
 }
 
 button:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--green);
+  box-shadow: 1px 1px 0 var(--yellow);
 }
 
 button:disabled {
@@ -285,7 +286,7 @@ button:disabled {
   padding: 1.2rem 1.35rem;
   border: 2px solid var(--ink);
   background: var(--paper);
-  box-shadow: 6px 6px 0 var(--green);
+  box-shadow: 6px 6px 0 var(--orange);
 }
 
 .status {
@@ -297,7 +298,7 @@ button:disabled {
   display: block;
   margin-bottom: 0.8rem;
   content: "INVESTIGATOR'S REPORT";
-  color: #60736a;
+  color: #7a5147;
   font-family: "Courier New", monospace;
   font-size: 0.7rem;
   font-weight: 700;
@@ -317,13 +318,13 @@ button:disabled {
 }
 
 .verdict.pass {
-  background: var(--green-light);
-  color: #365f42;
+  background: #fff0bf;
+  color: var(--burgundy);
 }
 
 .verdict.issues_found {
-  background: #f2d9c9;
-  color: #854a42;
+  background: #f8d9d6;
+  color: #9d2116;
 }
 
 .issue {
@@ -358,8 +359,8 @@ footer {
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 0.8rem;
-  border-top: 1px solid rgba(24, 59, 78, 0.35);
-  color: #5f7168;
+  border-top: 1px solid rgba(96, 35, 32, 0.35);
+  color: #715b55;
   font-family: "Courier New", monospace;
   font-size: 0.68rem;
   letter-spacing: 0.05em;
@@ -384,7 +385,7 @@ footer {
 
   form {
     padding: 0.85rem;
-    box-shadow: 4px 5px 0 var(--blue);
+    box-shadow: 4px 5px 0 var(--yellow);
   }
 
   .case-heading {
