@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SoW Fact Check</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="kicker">Consulting SoW helper</p>
+        <h1>Fact-check an AI deliverable</h1>
+        <p class="lede">
+          Paste trusted reference material on the left and the AI-generated draft on the
+          right. The server asks an LLM whether the draft invents or contradicts facts.
+        </p>
+      </header>
+
+      <form id="fact-check-form">
+        <div class="grid">
+          <label>
+            Reference material
+            <textarea
+              id="reference"
+              name="reference"
+              required
+              placeholder="Source of truth: notes, contract, SoW facts, meeting recap…"
+            ></textarea>
+          </label>
+          <label>
+            AI-generated deliverable
+            <textarea
+              id="deliverable"
+              name="deliverable"
+              required
+              placeholder="Draft SoW, summary, or other generated document…"
+            ></textarea>
+          </label>
+        </div>
+        <button type="submit" id="submit-btn">Run fact check</button>
+      </form>
+
+      <section id="status" class="status" hidden></section>
+      <section id="results" hidden></section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
