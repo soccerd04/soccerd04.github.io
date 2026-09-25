@@ -21,6 +21,23 @@ If `node` is still not recognized, use:
 $env:Path = "C:\Program Files\nodejs;" + $env:Path
 ```
 
+## Public site (`https://soccerd04.github.io`)
+
+GitHub Pages only hosts the **client**. The URL `soccerd04.github.io` only works from a public repo named **`soccerd04.github.io`**.
+
+1. On GitHub, create an empty public repository named `soccerd04.github.io` (no README).
+2. In this folder:
+
+```powershell
+$env:Path = "$env:LOCALAPPDATA\Programs\Git\cmd;C:\Program Files\nodejs;" + $env:Path
+git remote add github-io https://github.com/soccerd04/soccerd04.github.io.git
+git push -u github-io main
+```
+
+3. In that repo: **Settings → Pages → Source: GitHub Actions**.
+
+The form will load for anyone. **Run fact check** still needs the Node server on a host that can keep `OPENAI_API_KEY` secret. After that exists, set Actions variable `VITE_API_URL` to the API origin (no trailing slash) and redeploy.
+
 ## Layout
 
 - `client/` — Vite page with two text areas

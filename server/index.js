@@ -16,7 +16,16 @@ const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").rep
   ""
 );
 
-app.use(cors({ origin: ["http://localhost:5173", "http://127.0.0.1:5173"] }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://soccerd04.github.io",
+];
+if (process.env.CLIENT_ORIGIN) {
+  allowedOrigins.push(process.env.CLIENT_ORIGIN);
+}
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_req, res) => {

@@ -2,6 +2,13 @@ const form = document.querySelector("#fact-check-form");
 const statusEl = document.querySelector("#status");
 const resultsEl = document.querySelector("#results");
 const submitBtn = document.querySelector("#submit-btn");
+const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+if (import.meta.env.PROD && !apiBase) {
+  setStatus(
+    "This page is public on GitHub Pages. Fact check still needs a hosted Node API (VITE_API_URL). Locally, use npm run dev."
+  );
+}
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -13,7 +20,7 @@ form.addEventListener("submit", async (event) => {
   submitBtn.disabled = true;
 
   try {
-    const response = await fetch("/api/fact-check", {
+    const response = await fetch(`${apiBase}/api/fact-check`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reference, deliverable }),
