@@ -1,55 +1,51 @@
-# The Nancy Drew Files
+# CheckThat
 
-A vintage detective-inspired consulting fact checker. Paste **reference material** and an **AI-generated deliverable**. A Cloudflare Worker uses Workers AI to identify unsupported or contradictory claims.
+CheckThat verifies a document against trusted reference material. Judges open **https://soccerd04.github.io**. That page is only the interface. Reviews go to a small API that holds the OpenAI key and calls OpenAI. The key is never in the GitHub Pages files.
 
-## Run locally
+Do not commit `OPENAI_API_KEY`. Do not paste it into chat. Revoke any key that was shared, then create a new one.
 
-No external AI API key is required. Workers AI uses the `AI` binding on your Cloudflare account.
+## Demo architecture
 
-```powershell
-cd "$env:USERPROFILE\Documents\AI innovation"
-npm install
-npm run dev
-```
+1. GitHub Pages serves the website.
+2. The Cloudflare Worker `checkthat-api` stores `OPENAI_API_KEY` as an encrypted secret.
+3. The Worker calls OpenAI and returns the review JSON.
+4. The browser never sees the key.
 
-Open [http://localhost:5173](http://localhost:5173). The UI proxies `/api` to Wrangler on port 8787. Wrangler may ask you to authenticate with Cloudflare because local AI inference still runs on Cloudflare.
+## One-time: store the OpenAI key on the Worker
 
-If `node` is still not recognized, use:
+In a PowerShell window (do not paste the key into Cursor chat):
 
 ```powershell
 $env:Path = "C:\Program Files\nodejs;" + $env:Path
+cd "$env:USERPROFILE\Documents\AI innovation"
+npx wrangler login
+npx wrangler secret put OPENAI_API_KEY --cwd worker
 ```
 
-## Public site (`https://soccerd04.github.io`)
-
-GitHub Pages only hosts the **client**. The URL `soccerd04.github.io` only works from a public repo named **`soccerd04.github.io`**.
-
-1. On GitHub, create an empty public repository named `soccerd04.github.io` (no README).
-2. In this folder:
-
-```powershell
-$env:Path = "$env:LOCALAPPDATA\Programs\Git\cmd;C:\Program Files\nodejs;" + $env:Path
-git remote add github-io https://github.com/soccerd04/soccerd04.github.io.git
-git push -u github-io main
-```
-
-3. In that repo: **Settings → Pages → Source: GitHub Actions**.
-
-Set the GitHub Actions variable `VITE_API_URL` to the deployed Worker's origin (no trailing slash), then redeploy Pages.
-
-## Cloudflare Worker
-
-The Worker uses `@cf/meta/llama-3.3-70b-instruct-fp8-fast` through a Workers AI binding. No API key is stored in this repository.
+When prompted, paste the **new** key. Then:
 
 ```powershell
 npm run worker:deploy
 ```
 
-Cloudflare currently includes 10,000 free Workers AI neurons per day. Long documents consume more of that allocation. Review Cloudflare's data-processing terms and your organization's policy before submitting client-confidential material.
+Confirm `https://checkthat-api.silly-capacity-50d.workers.dev/health` returns `"ready": true`.
+
+## Public site
+
+Every push to `main` rebuilds GitHub Pages with `VITE_API_URL` pointing at that Worker. After the first successful Worker secret + deploy + Pages build, judges can use the site on a phone or laptop.
+
+Warm the API once before the demo by opening the health URL above.
+
+## Run locally
+
+1. Copy `server/.env.example` to `server/.env` and add `OPENAI_API_KEY`.
+2. `npm install` then `npm run dev`.
+3. Open [http://localhost:5173](http://localhost:5173).
 
 ## Layout
 
-- `client/` — Vite page with two text areas
-- `worker/` — Cloudflare Worker with `POST /api/fact-check`
+- `client/` — Vite front end (GitHub Pages)
+- `server/` — local Node API
+- `worker/` — hosted OpenAI lockbox for the public demo
 
-This is an unofficial, detective-inspired project and is not affiliated with the Nancy Drew rights holders.
+Results are AI-generated and require human review.

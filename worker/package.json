@@ -1,5 +1,5 @@
 {
-  "name": "fact-check-worker",
+  "name": "checkthat-worker",
   "private": true,
   "type": "module",
   "scripts": {

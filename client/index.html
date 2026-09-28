@@ -5,74 +5,140 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A vintage detective-inspired fact checker for consulting deliverables."
+      content="CheckThat verifies a document against trusted reference material and flags unsupported or contradicted claims."
     />
-    <title>The Nancy Drew Files</title>
+    <title>CheckThat — Document verification</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div class="top-stripe" aria-hidden="true"></div>
-    <main>
-      <header class="masthead">
-        <div class="magnifier" aria-hidden="true">⌕</div>
-        <p class="edition">Case desk · Confidential review</p>
-        <h1><span>The</span> Nancy Drew Files</h1>
-        <p class="tagline">A consulting document mystery</p>
-        <p class="lede">
-          Every claim leaves a clue. Compare your source of truth with an AI-generated
-          deliverable and uncover contradictions, invented facts, and suspicious details.
-        </p>
-      </header>
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true">✓</span>
+          <span class="brand-name">CheckThat</span>
+        </a>
+        <span class="brand-meta">Document verification</span>
+      </div>
+    </header>
 
-      <form id="fact-check-form">
-        <div class="case-heading">
-          <span>Case No. 001</span>
-          <strong>The Case of the Questionable Deliverable</strong>
-          <span id="case-date"></span>
-        </div>
-        <div class="grid">
-          <label class="evidence-card evidence-reference">
-            <span class="card-number">Exhibit A</span>
-            <span class="card-title">Trusted reference material</span>
-            <span class="card-note">The facts as we know them</span>
+    <main class="wrap">
+      <section class="intro">
+        <h1>Verify a document against its source</h1>
+        <p>
+          Upload or paste your approved reference material alongside the document you
+          want to review. CheckThat flags claims that contradict the reference or that
+          the reference does not support.
+        </p>
+      </section>
+
+      <aside class="confidentiality">
+        <h2>Client confidentiality</h2>
+        <p>
+          Text you submit leaves this browser and is sent to an external AI service for
+          analysis. Do not submit client-confidential, personal, or privileged material
+          unless your engagement terms and your firm's data policy allow it. Redact
+          names, figures, and identifiers the review does not need.
+        </p>
+      </aside>
+
+      <form id="fact-check-form" novalidate>
+        <fieldset class="scope">
+          <legend>Review scope</legend>
+
+          <div class="field">
+            <label for="sector">Sector</label>
+            <select id="sector" name="sector">
+              <option value="">General review (no sector lens)</option>
+            </select>
+            <p class="field-hint">
+              Adds the statement-of-work risks that matter most in that industry.
+            </p>
+          </div>
+
+          <div class="field">
+            <label for="workstreams">Workstream or capability</label>
+            <select id="workstreams" name="workstreams">
+              <option value="">General review (no workstream lens)</option>
+            </select>
+            <p class="field-hint">
+              Adds the delivery risks that matter most for that SAP workstream.
+            </p>
+          </div>
+        </fieldset>
+
+        <div class="panels">
+          <section class="panel">
+            <div class="panel-head">
+              <label for="reference">Reference material</label>
+              <span class="tag">Source of truth</span>
+            </div>
+            <div class="upload">
+              <label class="file-button">
+                Upload file
+                <input type="file" id="reference-file" hidden />
+              </label>
+              <span class="file-status" id="reference-file-status">
+                PDF, DOCX, TXT, MD, or CSV — or paste below
+              </span>
+            </div>
             <textarea
               id="reference"
               name="reference"
               required
-              placeholder="Paste the source of truth: contract terms, approved notes, SoW facts, meeting recap…"
+              spellcheck="false"
+              placeholder="Contract terms, approved scope, meeting notes, or any material you trust as accurate."
             ></textarea>
-          </label>
-          <label class="evidence-card evidence-draft">
-            <span class="card-number">Exhibit B</span>
-            <span class="card-title">AI-generated deliverable</span>
-            <span class="card-note">The document under investigation</span>
+            <p class="counter" id="reference-count">0 characters</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <label for="deliverable">Document to check</label>
+              <span class="tag tag-muted">Under review</span>
+            </div>
+            <div class="upload">
+              <label class="file-button">
+                Upload file
+                <input type="file" id="deliverable-file" hidden />
+              </label>
+              <span class="file-status" id="deliverable-file-status">
+                PDF, DOCX, TXT, MD, or CSV — or paste below
+              </span>
+            </div>
             <textarea
               id="deliverable"
               name="deliverable"
               required
-              placeholder="Paste the draft SoW, summary, or other generated document…"
+              spellcheck="false"
+              placeholder="The draft statement of work, summary, or report you want verified."
             ></textarea>
-          </label>
+            <p class="counter" id="deliverable-count">0 characters</p>
+          </section>
         </div>
-        <div class="action-row">
-          <p>
-            Powered by Cloudflare Workers AI · No API key required · Do not submit
-            client-confidential material without organizational approval
-          </p>
-          <button type="submit" id="submit-btn">
-            <span aria-hidden="true">⌕</span> Investigate the facts
-          </button>
+
+        <div class="form-footer">
+          <label class="ack">
+            <input type="checkbox" id="ack" />
+            <span>
+              I confirm this material may be sent to an external AI service under my
+              firm's data policy.
+            </span>
+          </label>
+          <button type="submit" id="submit-btn">Run check</button>
         </div>
       </form>
 
       <section id="status" class="status" hidden></section>
-      <section id="results" hidden></section>
-
-      <footer>
-        <span>Private eye for consulting details</span>
-        <span>Unofficial detective-inspired project</span>
-      </footer>
+      <section id="results" class="results" hidden></section>
     </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <span>CheckThat</span>
+        <span>Results are AI-generated and require human review.</span>
+      </div>
+    </footer>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

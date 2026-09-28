@@ -1,81 +1,253 @@
+import { SECTORS, WORKSTREAMS } from "./taxonomy.js";
+
 const form = document.querySelector("#fact-check-form");
 const statusEl = document.querySelector("#status");
 const resultsEl = document.querySelector("#results");
 const submitBtn = document.querySelector("#submit-btn");
-const caseDateEl = document.querySelector("#case-date");
+const referenceEl = document.querySelector("#reference");
+const deliverableEl = document.querySelector("#deliverable");
+const sectorEl = document.querySelector("#sector");
+const workstreamsEl = document.querySelector("#workstreams");
+const ackEl = document.querySelector("#ack");
 const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
-caseDateEl.textContent = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-}).format(new Date());
+buildSectorOptions();
+buildWorkstreamOptions();
+wireCounters();
+wireFileInputs();
 
 if (import.meta.env.PROD && !apiBase) {
   setStatus(
-    "Case desk is open. Online investigations will begin once the Cloudflare Worker URL is connected."
+    "This public build is missing its API URL. Redeploy GitHub Pages after VITE_API_URL is set.",
+    true
   );
+}
+
+function buildSectorOptions() {
+  for (const { value, label } of SECTORS) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    sectorEl.append(option);
+  }
+}
+
+function buildWorkstreamOptions() {
+  for (const { value, label } of WORKSTREAMS) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    workstreamsEl.append(option);
+  }
+}
+
+function selectedWorkstreams() {
+  return workstreamsEl.value ? [workstreamsEl.value] : [];
+}
+
+function wireCounters() {
+  const pairs = [
+    [referenceEl, document.querySelector("#reference-count")],
+    [deliverableEl, document.querySelector("#deliverable-count")],
+  ];
+
+  for (const [input, output] of pairs) {
+    const update = () => {
+      const count = input.value.length;
+      output.textContent = `${count.toLocaleString()} character${
+        count === 1 ? "" : "s"
+      }`;
+    };
+    input.addEventListener("input", update);
+    input.dataset.update = "true";
+    update();
+  }
+}
+
+function wireFileInputs() {
+  const pairs = [
+    ["#reference-file", referenceEl, "#reference-file-status"],
+    ["#deliverable-file", deliverableEl, "#deliverable-file-status"],
+  ];
+
+  for (const [inputSelector, textarea, statusSelector] of pairs) {
+    const fileInput = document.querySelector(inputSelector);
+    const fileStatus = document.querySelector(statusSelector);
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      fileStatus.textContent = `Reading ${file.name}…`;
+      fileStatus.className = "file-status";
+
+      try {
+        const { extractText } = await import("./parse.js");
+        const text = await extractText(file);
+        textarea.value = text;
+        textarea.dispatchEvent(new Event("input"));
+        fileStatus.textContent = `${file.name} loaded`;
+        fileStatus.className = "file-status ok";
+      } catch (err) {
+        fileStatus.textContent =
+          err instanceof Error ? err.message : "Could not read that file.";
+        fileStatus.className = "file-status error";
+      } finally {
+        fileInput.value = "";
+      }
+    });
+  }
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const reference = document.querySelector("#reference").value.trim();
-  const deliverable = document.querySelector("#deliverable").value.trim();
 
-  setStatus("Examining the evidence and following every clue…");
+  const reference = referenceEl.value.trim();
+  const deliverable = deliverableEl.value.trim();
+
+  if (!reference || !deliverable) {
+    setStatus("Add both the reference material and the document to check.", true);
+    return;
+  }
+
+  if (!ackEl.checked) {
+    setStatus(
+      "Confirm the confidentiality acknowledgement before running the check.",
+      true
+    );
+    return;
+  }
+
+  setStatus("Checking the document against your reference…");
   resultsEl.hidden = true;
   submitBtn.disabled = true;
 
   try {
-    const response = await fetch(`${apiBase}/api/fact-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reference, deliverable }),
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Request failed.");
+    if (import.meta.env.PROD && !apiBase) {
+      throw new Error(
+        "GitHub Pages cannot call OpenAI by itself. Run the app locally with npm run dev, or connect a backend that stores the API key."
+      );
     }
+
+    const payload = {
+      reference,
+      deliverable,
+      sector: sectorEl.value || null,
+      workstreams: selectedWorkstreams(),
+    };
+    const data = await postFactCheck(payload);
 
     statusEl.hidden = true;
     renderResults(data);
   } catch (err) {
-    setStatus(err instanceof Error ? err.message : "Something went wrong.");
+    setStatus(err instanceof Error ? err.message : "Something went wrong.", true);
   } finally {
     submitBtn.disabled = false;
   }
 });
 
-function setStatus(message) {
+async function postFactCheck(payload, attempt = 1) {
+  let response;
+  try {
+    response = await fetch(`${apiBase}/api/fact-check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    if (attempt < 3) {
+      setStatus("Waking the verification service…");
+      await wait(3000 * attempt);
+      return postFactCheck(payload, attempt + 1);
+    }
+    throw err;
+  }
+
+  const data = await readJson(response);
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed.");
+  }
+  return data;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function readJson(response) {
+  const raw = await response.text();
+  if (!raw) {
+    throw new Error(
+      "The server returned an empty response. If you are on soccerd04.github.io, there is no API on GitHub Pages — use npm run dev locally."
+    );
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(
+      "The server did not return JSON. GitHub Pages only serves the website files, not the OpenAI backend."
+    );
+  }
+}
+
+function setStatus(message, isError = false) {
   statusEl.hidden = false;
   statusEl.textContent = message;
+  statusEl.classList.toggle("error", isError);
 }
 
 function renderResults(data) {
-  const issues = data.issues || [];
+  const issues = Array.isArray(data.issues) ? data.issues : [];
+  const passed = data.verdict === "pass";
+
+  const truncationNote =
+    data.truncated?.reference || data.truncated?.deliverable
+      ? `<p class="results-note">One or both documents were longer than the review limit and were shortened, so later sections were not checked.</p>`
+      : "";
+
   const issueHtml = issues.length
-    ? issues
-        .map(
-          (issue) => `
-        <article class="issue">
-          <p class="severity">${escapeHtml(issue.severity || "unspecified")} severity</p>
-          <h3>${escapeHtml(issue.claim || "Unnamed claim")}</h3>
-          <p>${escapeHtml(issue.problem || "")}</p>
-          <p><strong>Reference:</strong> ${escapeHtml(issue.from_reference || "n/a")}</p>
-        </article>`
-        )
-        .join("")
-    : "<p>No suspicious facts uncovered. The evidence supports this deliverable.</p>";
+    ? `<div class="issue-list">${issues.map(renderIssue).join("")}</div>`
+    : `<p class="empty">No unsupported or contradicted claims were found.</p>`;
 
   resultsEl.hidden = false;
   resultsEl.innerHTML = `
-    <span class="verdict ${escapeHtml(data.verdict || "issues_found")}">${escapeHtml(
-      data.verdict === "pass" ? "Case cleared" : "Clues uncovered"
-    )}</span>
-    <p>${escapeHtml(data.summary || "")}</p>
+    <div class="results-head">
+      <span class="verdict ${passed ? "pass" : "issues_found"}">${
+        passed ? "No issues found" : "Issues found"
+      }</span>
+      <span class="results-count">${issues.length} flagged claim${
+        issues.length === 1 ? "" : "s"
+      }</span>
+    </div>
+    <p class="summary">${escapeHtml(data.summary || "")}</p>
+    ${truncationNote}
     ${issueHtml}
   `;
+}
+
+function renderIssue(issue) {
+  const severity = ["high", "medium", "low"].includes(issue.severity)
+    ? issue.severity
+    : "low";
+  const area = issue.area && issue.area !== "General" ? issue.area : "";
+
+  return `
+    <article class="issue ${severity}">
+      <div class="issue-head">
+        <h3>${escapeHtml(issue.claim || "Unnamed claim")}</h3>
+        <span class="issue-meta">
+          ${area ? `<span class="area">${escapeHtml(area)}</span>` : ""}
+          <span class="severity">${severity}</span>
+        </span>
+      </div>
+      <dl>
+        <dt>Problem</dt>
+        <dd>${escapeHtml(issue.problem || "Not specified.")}</dd>
+        <dt>Reference</dt>
+        <dd>${escapeHtml(issue.from_reference || "Not found in the reference.")}</dd>
+      </dl>
+    </article>`;
 }
 
 function escapeHtml(value) {
