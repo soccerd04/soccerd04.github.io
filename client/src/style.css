@@ -176,6 +176,18 @@ label {
   font-weight: 600;
 }
 
+.field-label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.optional {
+  margin-left: 0.4rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
 .field-hint {
   margin: 0.4rem 0 0;
   color: var(--muted);
@@ -200,6 +212,44 @@ select:focus-visible {
   border-color: var(--accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(208, 74, 2, 0.14);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.4rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.55rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+}
+
+.chip input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.chip:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
 }
 
 /* Input panels */

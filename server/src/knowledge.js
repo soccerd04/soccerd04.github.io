@@ -2,188 +2,191 @@
 // client/src/taxonomy.js.
 
 export const SECTORS = {
-  financial_services: {
-    label: "Financial services",
-    guidance: [
-      "Regulatory references (Basel, Dodd-Frank, MiFID II, PSD2, FFIEC) must match the reference exactly; a wrong regulation or article number is a high-severity issue.",
-      "Watch for unsupported claims about regulator approval, audit sign-off, or model validation.",
-      "Data residency, customer data handling, and outsourcing/third-party risk commitments must trace to the reference.",
-    ],
-  },
-  health_industries: {
-    label: "Health industries",
-    guidance: [
-      "HIPAA, PHI handling, and BAA commitments must appear in the reference before the document can assert them.",
-      "Claims about patient safety, clinical outcomes, or accreditation (e.g. Joint Commission) need explicit support.",
-      "Interoperability standards (HL7, FHIR, X12) and their versions must match the reference.",
-    ],
-  },
-  pharma_life_sciences: {
-    label: "Pharmaceuticals and life sciences",
-    guidance: [
-      "GxP, 21 CFR Part 11, computer system validation, and Annex 11 commitments must be explicitly supported.",
-      "Validation deliverables (IQ/OQ/PQ), qualification scope, and audit-trail claims are high risk when invented.",
-      "Do not accept unsupported statements about regulatory submission timelines or agency interaction.",
-    ],
-  },
   tmt: {
-    label: "Technology, media and telecom",
+    label: "Tech, media and telecomms",
     guidance: [
       "License counts, subscription tiers, and entitlement claims must match the reference numbers exactly.",
       "Uptime, latency, and availability figures are high risk; verify every number against the reference.",
       "Check content rights, IP ownership, and open-source obligations against the reference only.",
     ],
   },
-  energy_utilities: {
-    label: "Energy, utilities and resources",
+  pharma_life_sciences: {
+    label: "Pharma and life sciences",
     guidance: [
-      "Regulatory and reliability standards (NERC CIP, FERC, ISO/RTO rules) must match the reference precisely.",
-      "Asset counts, plant/site names, outage windows, and capacity figures are high-risk invented details.",
+      "GxP, 21 CFR Part 11, computer system validation, and Annex 11 commitments must be explicitly supported.",
+      "Validation deliverables (IQ/OQ/PQ), qualification scope, and audit-trail claims are high risk when invented.",
+      "Do not accept unsupported statements about regulatory submission timelines or agency interaction.",
+    ],
+  },
+  industrial_products: {
+    label: "Industrial products and services",
+    guidance: [
+      "Plant counts, production lines, aftermarket/service scope, and shift patterns must match the reference.",
+      "Quality and safety standards (IATF 16949, ISO 9001, ISO 27001) must not be asserted without support.",
+      "Check claims about OT/shop-floor integration and equipment interfaces carefully.",
+    ],
+  },
+  oil_gas_energy: {
+    label: "Oil, gas and energy",
+    guidance: [
+      "Asset counts, site names, outage windows, and capacity figures are high-risk invented details.",
+      "HSSE, joint-venture, and production-sharing commitments must trace to the reference.",
       "Emissions, ESG, and sustainability claims require explicit reference support.",
     ],
   },
-  consumer_markets: {
-    label: "Consumer markets and retail",
+  retail: {
+    label: "Retail",
     guidance: [
       "Store counts, SKU volumes, channel coverage, and peak-season freeze windows must trace to the reference.",
       "Payment card handling (PCI DSS) and loyalty/customer data commitments need explicit support.",
       "Verify promised launch dates against the reference, especially around peak trading periods.",
     ],
   },
-  industrial_manufacturing: {
-    label: "Industrial manufacturing and automotive",
+  aerospace_defense: {
+    label: "Aerospace and defense",
     guidance: [
-      "Plant counts, production lines, shift patterns, and cutover blackout windows must match the reference.",
-      "Quality and safety standards (IATF 16949, ISO 9001, ISO 27001) must not be asserted without support.",
-      "Check claims about OT/shop-floor integration and equipment interfaces carefully.",
+      "ITAR, EAR, CMMC, and other export-control or program-security claims must match the reference exactly.",
+      "Program names, contract vehicles, and classification handling are high risk when invented.",
+      "Quality and configuration-management standards (AS9100, configuration baseline) need explicit support.",
     ],
   },
-  public_sector: {
-    label: "Government and public sector",
+  utilities: {
+    label: "Utilities",
     guidance: [
-      "Procurement vehicle, contract number, and clause references (FAR/DFARS) must match the reference exactly.",
-      "Security authorizations (FedRAMP, StateRAMP, ATO status) are high risk when claimed without support.",
-      "Funding sources, appropriation periods, and option years must trace to the reference.",
+      "Regulatory and reliability standards (NERC CIP, FERC, ISO/RTO rules) must match the reference precisely.",
+      "Asset counts, plant/site names, outage windows, and capacity figures are high-risk invented details.",
+      "Customer counts, rate-case, and regulated-entity scope must trace to the reference.",
+    ],
+  },
+  consumer_markets: {
+    label: "Consumer markets",
+    guidance: [
+      "Brand, channel, and market-scope claims must match the reference.",
+      "Promotions, trade-spend, and volume figures are high risk when invented.",
+      "Data-privacy and consumer-protection commitments need explicit support.",
     ],
   },
 };
 
-export const WORKSTREAMS = {
-  pmo: {
-    label: "PMO",
+export const CAPABILITIES = {
+  digital_supply_chain: {
+    label: "Digital supply chain",
     guidance: [
-      "Governance bodies, meeting cadence, escalation paths, and reporting frequency must match the reference.",
-      "Check milestone dates, phase gates, and status-reporting commitments for invented or shifted dates.",
-      "Verify assumptions, dependencies, and the change-control process are stated as the reference states them.",
+      "Plants, warehouses, storage locations, and material counts must trace to the reference.",
+      "Check planning scope (MRP, PP/DS, IBP, EWM) and any inventory or throughput figures.",
+      "Verify supplier integration, logistics, and EDI scope claims against the reference only.",
     ],
   },
-  tmo: {
-    label: "TMO",
+  procurement: {
+    label: "Procurement",
     guidance: [
-      "Transformation scope, value targets, and benefit-realisation figures must trace to the reference.",
-      "Watch for invented business-case numbers, KPIs, or benefit percentages.",
-      "Verify the transformation roadmap, wave sequencing, and in-scope entities against the reference.",
+      "Vendor counts, category scope, sourcing events, and contract volumes must match the reference.",
+      "Check P2P process scope, approval limits, and catalog claims carefully.",
+      "Do not accept invented savings percentages or supplier-enablement numbers.",
     ],
   },
-  ocm: {
-    label: "Change management (OCM)",
+  customer: {
+    label: "Customer",
     guidance: [
-      "Stakeholder counts, impacted headcount, and communication commitments must match the reference.",
-      "Check claims about readiness assessments, adoption metrics, and super-user networks.",
-      "Do not accept invented training audiences or enablement volumes.",
+      "Sales organisations, channels, pricing procedures, and order types must match the reference.",
+      "CRM, commerce, billing, and service-scope claims need explicit support.",
+      "Watch for invented customer counts, NPS targets, or order volumes.",
+    ],
+  },
+  hcm: {
+    label: "Human capital management",
+    guidance: [
+      "Employee counts, countries in scope, and payroll entities must match the reference.",
+      "Check claims about SuccessFactors/HCM modules, time, benefits, and union rules.",
+      "Do not accept invented headcount, go-live waves, or statutory-payroll coverage.",
     ],
   },
   finance: {
-    label: "Finance (FI/CO)",
+    label: "Finance",
     guidance: [
-      "Chart of accounts scope, company codes, ledgers, and currency handling must match the reference.",
+      "Chart of accounts, company codes, ledgers, and currency handling must match the reference.",
       "Period-close timelines, statutory reporting, and tax scope are high risk when invented.",
       "Verify any reference to Central Finance, Group Reporting, or FI/CO submodules against the reference.",
     ],
   },
-  supply_chain: {
-    label: "Supply chain (MM/PP/EWM)",
+  technology: {
+    label: "Technology",
     guidance: [
-      "Plants, warehouses, storage locations, and material counts must trace to the reference.",
-      "Check planning scope (MRP, PP/DS, IBP) and any inventory or throughput figures.",
-      "Verify supplier integration and EDI scope claims against the reference only.",
+      "System landscape, hosting, hyperscaler, Basis, and security/authorization claims must trace to the reference.",
+      "Check interface counts, middleware (CPI/PI/BTP), and environment strategy.",
+      "Do not accept invented environment counts, integration numbers, or RISE terms.",
     ],
   },
-  order_to_cash: {
-    label: "Order to cash (SD)",
+  tmo_integration: {
+    label: "TMO integration",
     guidance: [
-      "Sales organisations, distribution channels, pricing procedures, and order types must match the reference.",
-      "Billing, credit management, and revenue recognition claims need explicit support.",
-      "Watch for invented customer counts or order volumes.",
+      "Transformation scope, value targets, and benefit-realisation figures must trace to the reference.",
+      "Watch for invented business-case numbers, KPIs, or benefit percentages.",
+      "Verify wave sequencing, in-scope entities, and how workstreams integrate with the TMO.",
     ],
   },
-  data_migration: {
-    label: "Data migration",
+  data_analytics: {
+    label: "Data and analytics",
     guidance: [
-      "Object counts, record volumes, legacy source systems, and load cycles must match the reference exactly.",
-      "Check the number of mock loads, data-quality thresholds, and reconciliation criteria.",
-      "Verify which data objects are in scope; invented objects or volumes are high severity.",
-    ],
-  },
-  technical_basis: {
-    label: "Technical and Basis",
-    guidance: [
-      "System landscape, client strategy, sizing, hosting, and hyperscaler commitments must trace to the reference.",
-      "Check release and patch levels, RISE/private-cloud terms, and infrastructure responsibilities.",
-      "Do not accept invented environment counts or refresh schedules.",
-    ],
-  },
-  security_grc: {
-    label: "Security, authorizations and GRC",
-    guidance: [
-      "Role counts, authorization design scope, and SoD ruleset claims must match the reference.",
-      "GRC module scope (Access Control, Process Control, Risk Management) needs explicit support.",
-      "Verify any statement about audit readiness or compliance certification.",
-    ],
-  },
-  integration: {
-    label: "Integration",
-    guidance: [
-      "Interface counts, middleware (CPI/PI/BTP), and protocol choices must match the reference exactly.",
-      "Check third-party systems named in the document against the reference list.",
-      "Invented interface numbers or integration patterns are high severity.",
-    ],
-  },
-  testing: {
-    label: "Testing and QA",
-    guidance: [
-      "Test phases, cycle counts, script volumes, and defect-severity definitions must trace to the reference.",
-      "Check entry and exit criteria, plus any pass-rate or coverage percentage.",
-      "Verify who is accountable for UAT and what the acceptance criteria actually are.",
-    ],
-  },
-  cutover_hypercare: {
-    label: "Cutover and hypercare",
-    guidance: [
-      "Cutover windows, downtime duration, freeze periods, and go-live dates must match the reference exactly.",
-      "Hypercare duration, staffing, and support coverage hours are high risk when invented.",
-      "Verify rollback and contingency commitments against the reference.",
-    ],
-  },
-  training: {
-    label: "Training and enablement",
-    guidance: [
-      "Course counts, learner numbers, delivery modes, and language coverage must match the reference.",
-      "Check claims about materials ownership and post-go-live enablement.",
-      "Do not accept invented training durations or certification promises.",
-    ],
-  },
-  analytics: {
-    label: "Analytics and reporting",
-    guidance: [
-      "Report and dashboard counts, tooling (SAC, BW/4HANA, Datasphere), and data sources must match the reference.",
-      "Check any KPI definitions or refresh-frequency commitments.",
-      "Verify claims about embedded analytics scope against the reference.",
+      "Migration object counts, record volumes, report/dashboard counts, and tooling must match the reference.",
+      "Check mock-load cycles, reconciliation criteria, KPI definitions, and refresh frequency.",
+      "Invented data objects, volumes, or analytics scope are high severity.",
     ],
   },
 };
 
-export function buildLensGuidance(sector, workstreams) {
+export const IMPLEMENTATIONS = {
+  greenfield: {
+    label: "Greenfield",
+    guidance: [
+      "New-build scope, clean-core claims, and 'net new' process design must be supported by the reference.",
+      "Watch for leftover brownfield or conversion assumptions that do not belong in a greenfield SoW.",
+      "Verify landscape, data-load, and cutover language matches a new implementation, not a conversion.",
+    ],
+  },
+  brownfield: {
+    label: "Brownfield",
+    guidance: [
+      "Conversion, upgrade, and retain-and-adapt claims must match the reference.",
+      "Custom-code remediation, SPDD/SPAU, and historical-data retention are high risk when invented.",
+      "Do not accept greenfield 'redesign everything' language unless the reference says so.",
+    ],
+  },
+  hybrid: {
+    label: "Hybrid",
+    guidance: [
+      "Which legal entities, processes, or systems are greenfield vs brownfield must match the reference.",
+      "Watch for a single approach being applied to the whole programme when the reference splits them.",
+      "Verify selective data transition, mix-and-match landscape, and dual-run claims carefully.",
+    ],
+  },
+  phase_0: {
+    label: "Phase 0",
+    guidance: [
+      "Discovery, current-state, and design-only deliverables must not be stated as build or run commitments.",
+      "Watch for implementation, cutover, or hypercare dates that a Phase 0 SoW does not include.",
+      "Verify workshop counts, assessment scope, and 'no build' language against the reference.",
+    ],
+  },
+  technical_functional_upgrade: {
+    label: "Technical / functional upgrade",
+    guidance: [
+      "Release, enhancement-pack, and version targets must match the reference exactly.",
+      "Regression-test scope, downtime, and compatibility claims are high risk when invented.",
+      "Do not treat an upgrade SoW as a full transformation unless the reference says so.",
+    ],
+  },
+  sap_expansion_rollout: {
+    label: "SAP expansion / rollout",
+    guidance: [
+      "Countries, company codes, plants, and template-reuse claims must match the reference.",
+      "Localisation, legal-entity, and language coverage are high risk when invented.",
+      "Verify whether this is a template rollout or a new design; do not blur the two.",
+    ],
+  },
+};
+
+export function buildLensGuidance(sector, capability, implementations) {
   const sections = [];
 
   const sectorEntry = SECTORS[sector];
@@ -193,13 +196,22 @@ export function buildLensGuidance(sector, workstreams) {
     );
   }
 
-  const selected = (Array.isArray(workstreams) ? workstreams : [])
-    .map((key) => [key, WORKSTREAMS[key]])
-    .filter(([, entry]) => Boolean(entry));
-
-  for (const [, entry] of selected) {
+  const capabilityEntry = CAPABILITIES[capability];
+  if (capabilityEntry) {
     sections.push(
-      `WORKSTREAM LENS — ${entry.label}:\n${bullets(entry.guidance)}`
+      `CAPABILITY LENS — ${capabilityEntry.label}:\n${bullets(
+        capabilityEntry.guidance
+      )}`
+    );
+  }
+
+  const selected = (Array.isArray(implementations) ? implementations : [])
+    .map((key) => IMPLEMENTATIONS[key])
+    .filter(Boolean);
+
+  for (const entry of selected) {
+    sections.push(
+      `IMPLEMENTATION LENS — ${entry.label}:\n${bullets(entry.guidance)}`
     );
   }
 
@@ -210,18 +222,6 @@ export function buildLensGuidance(sector, workstreams) {
   return `\n\nApply these additional review lenses. They tell you where issues are most likely and most costly, but they never override the reference material.\n\n${sections.join(
     "\n\n"
   )}`;
-}
-
-export function resolveAreaLabels(sector, workstreams) {
-  const labels = (Array.isArray(workstreams) ? workstreams : [])
-    .map((key) => WORKSTREAMS[key]?.label)
-    .filter(Boolean);
-
-  if (SECTORS[sector]) {
-    labels.push(SECTORS[sector].label);
-  }
-
-  return labels;
 }
 
 function bullets(lines) {

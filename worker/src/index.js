@@ -1,4 +1,4 @@
-import { buildLensGuidance, SECTORS, WORKSTREAMS } from "./knowledge.js";
+import { buildLensGuidance, CAPABILITIES, IMPLEMENTATIONS, SECTORS } from "./knowledge.js";
 
 const ALLOWED_ORIGINS = new Set([
   "https://soccerd04.github.io",
@@ -39,7 +39,7 @@ const FACT_CHECK_SCHEMA = {
           area: {
             type: "string",
             description:
-              "The workstream, sector lens, or 'General' that this issue belongs to.",
+              "The capability, sector, implementation type, or 'General' that this issue belongs to.",
           },
         },
         required: ["claim", "severity", "problem", "from_reference", "area"],
@@ -73,7 +73,8 @@ export default {
           model: env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
           ready: Boolean(env.OPENAI_API_KEY),
           sectors: Object.keys(SECTORS).length,
-          workstreams: Object.keys(WORKSTREAMS).length,
+          capabilities: Object.keys(CAPABILITIES).length,
+          implementations: Object.keys(IMPLEMENTATIONS).length,
         },
         200,
         cors
@@ -122,8 +123,13 @@ export default {
     }
 
     const sector = SECTORS[body?.sector] ? body.sector : null;
-    const workstreams = Array.isArray(body?.workstreams)
-      ? body.workstreams.filter((key) => Boolean(WORKSTREAMS[key])).slice(0, 8)
+    const capability = CAPABILITIES[body?.capability]
+      ? body.capability
+      : null;
+    const implementations = Array.isArray(body?.implementations)
+      ? body.implementations
+          .filter((key) => Boolean(IMPLEMENTATIONS[key]))
+          .slice(0, 8)
       : [];
 
     const reference = rawReference.slice(0, MAX_TEXT_LENGTH);
@@ -135,7 +141,7 @@ export default {
 
     try {
       const parsed = await runOpenAI(
-        buildPrompt({ reference, deliverable, sector, workstreams }),
+        buildPrompt({ reference, deliverable, sector, capability, implementations }),
         env
       );
 
@@ -198,7 +204,7 @@ async function runOpenAI(prompt, env) {
   return JSON.parse(raw);
 }
 
-function buildPrompt({ reference, deliverable, sector, workstreams }) {
+function buildPrompt({ reference, deliverable, sector, capability, implementations }) {
   return `Fact-check the document under review against the trusted reference material.
 
 Compare the document to the reference only. Do not use outside knowledge as if it were a source of truth.
@@ -211,9 +217,10 @@ Flag an issue when the document:
 
 Do not flag style, tone, missing polish, or reasonable synthesis that stays faithful to the reference.
 
-For each issue, set "area" to the most relevant workstream or sector lens listed below, or "General" when none applies.${buildLensGuidance(
+For each issue, set "area" to the most relevant sector, capability, or implementation lens listed below, or "General" when none applies.${buildLensGuidance(
     sector,
-    workstreams
+    capability,
+    implementations
   )}
 
 TRUSTED REFERENCE MATERIAL:

@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildLensGuidance, SECTORS, WORKSTREAMS } from "./knowledge.js";
+import { buildLensGuidance, CAPABILITIES, IMPLEMENTATIONS, SECTORS } from "./knowledge.js";
 
 loadEnvFile(join(dirname(fileURLToPath(import.meta.url)), "..", ".env"));
 
@@ -46,7 +46,7 @@ const FACT_CHECK_SCHEMA = {
           area: {
             type: "string",
             description:
-              "The workstream, sector lens, or 'General' that this issue belongs to.",
+              "The capability, sector, implementation type, or 'General' that this issue belongs to.",
           },
         },
         required: ["claim", "severity", "problem", "from_reference", "area"],
@@ -84,7 +84,8 @@ const server = createServer(async (req, res) => {
         model: process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
         ready: Boolean(key),
         sectors: Object.keys(SECTORS).length,
-        workstreams: Object.keys(WORKSTREAMS).length,
+        capabilities: Object.keys(CAPABILITIES).length,
+        implementations: Object.keys(IMPLEMENTATIONS).length,
       });
       return;
     }
@@ -123,8 +124,13 @@ const server = createServer(async (req, res) => {
     }
 
     const sector = SECTORS[body?.sector] ? body.sector : null;
-    const workstreams = Array.isArray(body?.workstreams)
-      ? body.workstreams.filter((key) => Boolean(WORKSTREAMS[key])).slice(0, 8)
+    const capability = CAPABILITIES[body?.capability]
+      ? body.capability
+      : null;
+    const implementations = Array.isArray(body?.implementations)
+      ? body.implementations
+          .filter((key) => Boolean(IMPLEMENTATIONS[key]))
+          .slice(0, 8)
       : [];
 
     const reference = rawReference.slice(0, MAX_TEXT_LENGTH);
@@ -138,7 +144,8 @@ const server = createServer(async (req, res) => {
       reference,
       deliverable,
       sector,
-      workstreams,
+      capability,
+      implementations,
     });
     const parsed = await runOpenAI(prompt);
     const model = process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL;
@@ -201,7 +208,7 @@ async function runOpenAI(prompt) {
   return JSON.parse(raw);
 }
 
-function buildPrompt({ reference, deliverable, sector, workstreams }) {
+function buildPrompt({ reference, deliverable, sector, capability, implementations }) {
   return `Fact-check the document under review against the trusted reference material.
 
 Compare the document to the reference only. Do not use outside knowledge as if it were a source of truth.
@@ -214,9 +221,10 @@ Flag an issue when the document:
 
 Do not flag style, tone, missing polish, or reasonable synthesis that stays faithful to the reference.
 
-For each issue, set "area" to the most relevant workstream or sector lens listed below, or "General" when none applies.${buildLensGuidance(
+For each issue, set "area" to the most relevant sector, capability, or implementation lens listed below, or "General" when none applies.${buildLensGuidance(
     sector,
-    workstreams
+    capability,
+    implementations
   )}
 
 TRUSTED REFERENCE MATERIAL:

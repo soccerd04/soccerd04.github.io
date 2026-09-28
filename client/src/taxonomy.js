@@ -1,32 +1,32 @@
 // Keys must stay in sync with server/src/knowledge.js and worker/src/knowledge.js.
 
 export const SECTORS = [
-  { value: "financial_services", label: "Financial services" },
-  { value: "health_industries", label: "Health industries" },
-  { value: "pharma_life_sciences", label: "Pharmaceuticals and life sciences" },
-  { value: "tmt", label: "Technology, media and telecom" },
-  { value: "energy_utilities", label: "Energy, utilities and resources" },
-  { value: "consumer_markets", label: "Consumer markets and retail" },
-  {
-    value: "industrial_manufacturing",
-    label: "Industrial manufacturing and automotive",
-  },
-  { value: "public_sector", label: "Government and public sector" },
+  { value: "tmt", label: "Tech, media and telecomms" },
+  { value: "pharma_life_sciences", label: "Pharma and life sciences" },
+  { value: "industrial_products", label: "Industrial products and services" },
+  { value: "oil_gas_energy", label: "Oil, gas and energy" },
+  { value: "retail", label: "Retail" },
+  { value: "aerospace_defense", label: "Aerospace and defense" },
+  { value: "utilities", label: "Utilities" },
+  { value: "consumer_markets", label: "Consumer markets" },
 ];
 
-export const WORKSTREAMS = [
-  { value: "pmo", label: "PMO" },
-  { value: "tmo", label: "TMO" },
-  { value: "ocm", label: "Change management (OCM)" },
-  { value: "finance", label: "Finance (FI/CO)" },
-  { value: "supply_chain", label: "Supply chain (MM/PP/EWM)" },
-  { value: "order_to_cash", label: "Order to cash (SD)" },
-  { value: "data_migration", label: "Data migration" },
-  { value: "technical_basis", label: "Technical and Basis" },
-  { value: "security_grc", label: "Security, authorizations and GRC" },
-  { value: "integration", label: "Integration" },
-  { value: "testing", label: "Testing and QA" },
-  { value: "cutover_hypercare", label: "Cutover and hypercare" },
-  { value: "training", label: "Training and enablement" },
-  { value: "analytics", label: "Analytics and reporting" },
+export const CAPABILITIES = [
+  { value: "digital_supply_chain", label: "Digital supply chain" },
+  { value: "procurement", label: "Procurement" },
+  { value: "customer", label: "Customer" },
+  { value: "hcm", label: "Human capital management" },
+  { value: "finance", label: "Finance" },
+  { value: "technology", label: "Technology" },
+  { value: "tmo_integration", label: "TMO integration" },
+  { value: "data_analytics", label: "Data and analytics" },
+];
+
+export const IMPLEMENTATIONS = [
+  { value: "greenfield", label: "Greenfield" },
+  { value: "brownfield", label: "Brownfield" },
+  { value: "hybrid", label: "Hybrid" },
+  { value: "phase_0", label: "Phase 0" },
+  { value: "technical_functional_upgrade", label: "Technical / functional upgrade" },
+  { value: "sap_expansion_rollout", label: "SAP expansion / rollout" },
 ];

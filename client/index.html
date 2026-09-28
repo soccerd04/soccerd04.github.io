@@ -56,12 +56,28 @@
           </div>
 
           <div class="field">
-            <label for="workstreams">Workstream or capability</label>
-            <select id="workstreams" name="workstreams">
-              <option value="">General review (no workstream lens)</option>
+            <label for="capability">Capability</label>
+            <select id="capability" name="capability">
+              <option value="">General review (no capability lens)</option>
             </select>
             <p class="field-hint">
-              Adds the delivery risks that matter most for that SAP workstream.
+              Adds the delivery risks that matter most for that capability.
+            </p>
+          </div>
+
+          <div class="field">
+            <span class="field-label" id="implementation-label">
+              Implementation type
+              <span class="optional">select any that apply</span>
+            </span>
+            <div
+              class="chips"
+              id="implementations"
+              role="group"
+              aria-labelledby="implementation-label"
+            ></div>
+            <p class="field-hint">
+              You can select more than one if the engagement mixes approaches.
             </p>
           </div>
         </fieldset>

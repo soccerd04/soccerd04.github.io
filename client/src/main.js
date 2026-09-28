@@ -1,4 +1,4 @@
-import { SECTORS, WORKSTREAMS } from "./taxonomy.js";
+import { CAPABILITIES, IMPLEMENTATIONS, SECTORS } from "./taxonomy.js";
 
 const form = document.querySelector("#fact-check-form");
 const statusEl = document.querySelector("#status");
@@ -7,12 +7,14 @@ const submitBtn = document.querySelector("#submit-btn");
 const referenceEl = document.querySelector("#reference");
 const deliverableEl = document.querySelector("#deliverable");
 const sectorEl = document.querySelector("#sector");
-const workstreamsEl = document.querySelector("#workstreams");
+const capabilityEl = document.querySelector("#capability");
+const implementationsEl = document.querySelector("#implementations");
 const ackEl = document.querySelector("#ack");
 const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
-buildSectorOptions();
-buildWorkstreamOptions();
+buildSelectOptions(sectorEl, SECTORS);
+buildSelectOptions(capabilityEl, CAPABILITIES);
+buildImplementationChips();
 wireCounters();
 wireFileInputs();
 
@@ -23,26 +25,37 @@ if (import.meta.env.PROD && !apiBase) {
   );
 }
 
-function buildSectorOptions() {
-  for (const { value, label } of SECTORS) {
+function buildSelectOptions(selectEl, items) {
+  for (const { value, label } of items) {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = label;
-    sectorEl.append(option);
+    selectEl.append(option);
   }
 }
 
-function buildWorkstreamOptions() {
-  for (const { value, label } of WORKSTREAMS) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = label;
-    workstreamsEl.append(option);
+function buildImplementationChips() {
+  for (const { value, label } of IMPLEMENTATIONS) {
+    const chip = document.createElement("label");
+    chip.className = "chip";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = value;
+    input.name = "implementations";
+
+    const text = document.createElement("span");
+    text.textContent = label;
+
+    chip.append(input, text);
+    implementationsEl.append(chip);
   }
 }
 
-function selectedWorkstreams() {
-  return workstreamsEl.value ? [workstreamsEl.value] : [];
+function selectedImplementations() {
+  return [...implementationsEl.querySelectorAll("input[type=checkbox]")]
+    .filter((input) => input.checked)
+    .map((input) => input.value);
 }
 
 function wireCounters() {
@@ -133,7 +146,8 @@ form.addEventListener("submit", async (event) => {
       reference,
       deliverable,
       sector: sectorEl.value || null,
-      workstreams: selectedWorkstreams(),
+      capability: capabilityEl.value || null,
+      implementations: selectedImplementations(),
     };
     const data = await postFactCheck(payload);
 
