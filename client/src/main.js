@@ -138,7 +138,7 @@ form.addEventListener("submit", async (event) => {
   try {
     if (import.meta.env.PROD && !apiBase) {
       throw new Error(
-        "GitHub Pages cannot call OpenAI by itself. Run the app locally with npm run dev, or connect a backend that stores the API key."
+        "This public build is missing its verification API URL. Redeploy GitHub Pages to reconnect it."
       );
     }
 
@@ -200,7 +200,7 @@ async function readJson(response) {
     return JSON.parse(raw);
   } catch {
     throw new Error(
-      "The server did not return JSON. GitHub Pages only serves the website files, not the OpenAI backend."
+      "The verification service returned an unexpected response. Please try again."
     );
   }
 }
@@ -212,56 +212,226 @@ function setStatus(message, isError = false) {
 }
 
 function renderResults(data) {
-  const issues = Array.isArray(data.issues) ? data.issues : [];
-  const passed = data.verdict === "pass";
+  const annotations = Array.isArray(data.annotations) ? data.annotations : [];
+  const actions = Array.isArray(data.action_items) ? data.action_items : [];
+  const counts = countClassifications(annotations);
 
   const truncationNote =
     data.truncated?.reference || data.truncated?.deliverable
       ? `<p class="results-note">One or both documents were longer than the review limit and were shortened, so later sections were not checked.</p>`
       : "";
 
-  const issueHtml = issues.length
-    ? `<div class="issue-list">${issues.map(renderIssue).join("")}</div>`
-    : `<p class="empty">No unsupported or contradicted claims were found.</p>`;
+  const { html: annotatedDocument, unmatched } = annotateDocument(
+    deliverableEl.value,
+    annotations
+  );
 
   resultsEl.hidden = false;
   resultsEl.innerHTML = `
-    <div class="results-head">
-      <span class="verdict ${passed ? "pass" : "issues_found"}">${
-        passed ? "No issues found" : "Issues found"
-      }</span>
-      <span class="results-count">${issues.length} flagged claim${
-        issues.length === 1 ? "" : "s"
-      }</span>
+    <div class="review-legend" aria-label="Claim classification legend">
+      ${renderLegendItem("grounded", "Grounded", counts.grounded)}
+      ${renderLegendItem("inferred", "Inferred / plausible", counts.inferred)}
+      ${renderLegendItem("unsupported", "Unsupported / wrong", counts.unsupported)}
     </div>
-    <p class="summary">${escapeHtml(data.summary || "")}</p>
     ${truncationNote}
-    ${issueHtml}
+    <section class="annotated-review">
+      <div class="section-heading">
+        <p>Hover over an underlined claim to see its review.</p>
+      </div>
+      <div class="annotated-document">${annotatedDocument}</div>
+      ${renderUnmatchedAnnotations(unmatched)}
+    </section>
+    ${renderActionItems(actions)}
   `;
+
+  resultsEl.querySelectorAll(".claim-mark").forEach((mark) => {
+    mark.addEventListener("click", () => {
+      const isOpen = mark.getAttribute("aria-expanded") === "true";
+      resultsEl.querySelectorAll('.claim-mark[aria-expanded="true"]').forEach(
+        (openMark) => openMark.setAttribute("aria-expanded", "false")
+      );
+      mark.setAttribute("aria-expanded", String(!isOpen));
+    });
+  });
 }
 
-function renderIssue(issue) {
-  const severity = ["high", "medium", "low"].includes(issue.severity)
-    ? issue.severity
-    : "low";
-  const area = issue.area && issue.area !== "General" ? issue.area : "";
+function countClassifications(annotations) {
+  return annotations.reduce(
+    (counts, annotation) => {
+      const classification = normalizeClassification(annotation.classification);
+      counts[classification] += 1;
+      return counts;
+    },
+    { grounded: 0, inferred: 0, unsupported: 0 }
+  );
+}
+
+function renderLegendItem(classification, label, count) {
+  return `
+    <span class="legend-item ${classification}">
+      <span class="legend-line" aria-hidden="true"></span>
+      ${escapeHtml(label)}
+      <strong>${count}</strong>
+    </span>`;
+}
+
+function annotateDocument(text, annotations) {
+  const lowerText = text.toLocaleLowerCase();
+  const located = [];
+  const unmatched = [];
+
+  for (const annotation of annotations) {
+    const claim = String(annotation?.claim || "").trim();
+    if (!claim) continue;
+
+    const start = lowerText.indexOf(claim.toLocaleLowerCase());
+    if (start === -1) {
+      unmatched.push(annotation);
+      continue;
+    }
+
+    located.push({ start, end: start + claim.length, annotation });
+  }
+
+  located.sort((a, b) => a.start - b.start || b.end - a.end);
+
+  const nonOverlapping = [];
+  let occupiedUntil = -1;
+  for (const item of located) {
+    if (item.start < occupiedUntil) {
+      unmatched.push(item.annotation);
+      continue;
+    }
+    nonOverlapping.push(item);
+    occupiedUntil = item.end;
+  }
+
+  let cursor = 0;
+  let html = "";
+  for (const item of nonOverlapping) {
+    html += escapeHtml(text.slice(cursor, item.start));
+    html += renderClaimMark(text.slice(item.start, item.end), item.annotation);
+    cursor = item.end;
+  }
+  html += escapeHtml(text.slice(cursor));
+
+  return { html, unmatched };
+}
+
+function renderClaimMark(text, annotation) {
+  const classification = normalizeClassification(annotation.classification);
+  const label = classificationLabel(classification);
+  const area =
+    annotation.area && annotation.area !== "General"
+      ? `<span class="popover-area">${escapeHtml(annotation.area)}</span>`
+      : "";
+
+  return `<button
+    type="button"
+    class="claim-mark ${classification}"
+    aria-expanded="false"
+  >${escapeHtml(text)}<span class="claim-popover" role="tooltip">
+      <span class="popover-head">
+        <strong>${label}</strong>
+        ${area}
+      </span>
+      <span class="popover-explanation">${escapeHtml(
+        annotation.explanation || "No explanation provided."
+      )}</span>
+      <span class="popover-label">Reference</span>
+      <q>${escapeHtml(
+        annotation.reference_quote || "Not found in the reference."
+      )}</q>
+    </span></button>`;
+}
+
+function renderUnmatchedAnnotations(annotations) {
+  if (!annotations.length) return "";
 
   return `
-    <article class="issue ${severity}">
-      <div class="issue-head">
-        <h3>${escapeHtml(issue.claim || "Unnamed claim")}</h3>
-        <span class="issue-meta">
-          ${area ? `<span class="area">${escapeHtml(area)}</span>` : ""}
-          <span class="severity">${severity}</span>
-        </span>
+    <details class="unmatched">
+      <summary>${annotations.length} additional finding${
+        annotations.length === 1 ? "" : "s"
+      }</summary>
+      <div class="unmatched-list">
+        ${annotations
+          .map((annotation) => {
+            const classification = normalizeClassification(
+              annotation.classification
+            );
+            return `<article class="unmatched-item ${classification}">
+              <strong>${escapeHtml(annotation.claim || "Unnamed claim")}</strong>
+              <p>${escapeHtml(annotation.explanation || "")}</p>
+              <q>${escapeHtml(
+                annotation.reference_quote || "Not found in the reference."
+              )}</q>
+            </article>`;
+          })
+          .join("")}
       </div>
-      <dl>
-        <dt>Problem</dt>
-        <dd>${escapeHtml(issue.problem || "Not specified.")}</dd>
-        <dt>Reference</dt>
-        <dd>${escapeHtml(issue.from_reference || "Not found in the reference.")}</dd>
-      </dl>
-    </article>`;
+    </details>`;
+}
+
+function renderActionItems(actions) {
+  if (!actions.length) {
+    return `
+      <section class="action-plan">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Next steps</p>
+            <h2>No follow-up actions suggested</h2>
+          </div>
+        </div>
+      </section>`;
+  }
+
+  return `
+    <section class="action-plan">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Next steps</p>
+          <h2>Suggested action plan</h2>
+        </div>
+        <p>${actions.length} focused action${
+          actions.length === 1 ? "" : "s"
+        } based on this review.</p>
+      </div>
+      <ul class="action-list">
+        ${actions
+          .map((item) => {
+            const priority = ["high", "medium", "low"].includes(item.priority)
+              ? item.priority
+              : "medium";
+            return `<li>
+              <label>
+                <input type="checkbox" />
+                <span class="action-copy">
+                  <span class="action-title">${escapeHtml(item.action)}</span>
+                  <span class="action-rationale">${escapeHtml(
+                    item.rationale || ""
+                  )}</span>
+                </span>
+                <span class="priority ${priority}">${priority}</span>
+              </label>
+            </li>`;
+          })
+          .join("")}
+      </ul>
+    </section>`;
+}
+
+function normalizeClassification(value) {
+  return ["grounded", "inferred", "unsupported"].includes(value)
+    ? value
+    : "unsupported";
+}
+
+function classificationLabel(classification) {
+  return {
+    grounded: "Grounded",
+    inferred: "Inferred / plausible",
+    unsupported: "Unsupported / wrong",
+  }[classification];
 }
 
 function escapeHtml(value) {

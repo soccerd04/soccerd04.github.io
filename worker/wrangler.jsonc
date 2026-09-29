@@ -5,7 +5,13 @@
   "main": "src/index.js",
   "compatibility_date": "2026-09-25",
   "workers_dev": true,
+  "ai": {
+    "binding": "AI"
+  },
   "vars": {
-    "OPENAI_MODEL": "gpt-4o-mini"
+    // Used unless an OPENAI_API_KEY secret is added, which switches the provider.
+    "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "OPENAI_API_URL": "https://genai-sharedservice-americas.pwcinternal.com/v1/chat/completions",
+    "OPENAI_MODEL": "azure.gpt-4.1-nano"
   }
 }

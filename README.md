@@ -1,51 +1,45 @@
 # CheckThat
 
-CheckThat verifies a document against trusted reference material. Judges open **https://soccerd04.github.io**. That page is only the interface. Reviews go to a small API that holds the OpenAI key and calls OpenAI. The key is never in the GitHub Pages files.
+CheckThat verifies a document against trusted reference material. Upload or paste the reference and the document to check, and the review flags claims that contradict the reference or that the reference does not support.
 
-Do not commit `OPENAI_API_KEY`. Do not paste it into chat. Revoke any key that was shared, then create a new one.
+The backend picks its provider automatically:
 
-## Demo architecture
+- **Cloudflare Workers AI** by default. No OpenAI account or billing needed.
+- **OpenAI** as soon as an OpenAI key is present. Nothing else has to change.
 
-1. GitHub Pages serves the website.
-2. The Cloudflare Worker `checkthat-api` stores `OPENAI_API_KEY` as an encrypted secret.
-3. The Worker calls OpenAI and returns the review JSON.
-4. The browser never sees the key.
+Never commit a key. `server/.env` is gitignored.
 
-## One-time: store the OpenAI key on the Worker
+## Run locally
 
-In a PowerShell window (do not paste the key into Cursor chat):
+1. Copy `server/.env.example` to `server/.env`.
+2. Fill in **one** provider:
+   - Cloudflare: set `CLOUDFLARE_API_TOKEN` (the account ID is prefilled).
+   - OpenAI: uncomment `OPENAI_API_KEY`. If set, it wins over Cloudflare.
+3. Start both the API and the site:
 
 ```powershell
 $env:Path = "C:\Program Files\nodejs;" + $env:Path
 cd "$env:USERPROFILE\Documents\AI innovation"
-npx wrangler login
-npx wrangler secret put OPENAI_API_KEY --cwd worker
+npm install
+npm run dev
 ```
 
-When prompted, paste the **new** key. Then:
+Open [http://localhost:5173](http://localhost:5173).
 
-```powershell
-npm run worker:deploy
-```
+Check which provider is active at [http://localhost:8787/health](http://localhost:8787/health). `"ready": false` means no provider is configured yet.
 
-Confirm `https://checkthat-api.silly-capacity-50d.workers.dev/health` returns `"ready": true`.
+If a review fails with a "could not reach" message, a VPN, proxy, or firewall is blocking the connection. That is a network problem, not a bad key.
 
 ## Public site
 
-Every push to `main` rebuilds GitHub Pages with `VITE_API_URL` pointing at that Worker. After the first successful Worker secret + deploy + Pages build, judges can use the site on a phone or laptop.
+`https://soccerd04.github.io` serves the front end only. It calls the Cloudflare Worker `checkthat-api`, which runs Workers AI with no key. Adding an `OPENAI_API_KEY` secret to that Worker switches it to OpenAI.
 
-Warm the API once before the demo by opening the health URL above.
-
-## Run locally
-
-1. Copy `server/.env.example` to `server/.env` and add `OPENAI_API_KEY`.
-2. `npm install` then `npm run dev`.
-3. Open [http://localhost:5173](http://localhost:5173).
+Pushing to `main` redeploys the site and the Worker through GitHub Actions.
 
 ## Layout
 
-- `client/` — Vite front end (GitHub Pages)
-- `server/` — local Node API
-- `worker/` — hosted OpenAI lockbox for the public demo
+- `client/` — Vite front end
+- `server/` — local API at `POST /api/fact-check`
+- `worker/` — hosted Cloudflare Worker for the public site
 
 Results are AI-generated and require human review.

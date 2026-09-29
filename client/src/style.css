@@ -19,8 +19,7 @@
 
   color: var(--text);
   background: var(--bg);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 16px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -338,7 +337,7 @@ textarea {
   outline: none;
   background: #fff;
   color: var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 0.86rem;
   line-height: 1.6;
   resize: vertical;
@@ -488,98 +487,333 @@ button[type="submit"]:disabled {
   font-size: 0.8rem;
 }
 
-.issue-list {
-  display: grid;
-  gap: 0.85rem;
-  margin-top: 1.25rem;
-}
-
-.issue {
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border-strong);
-  border-radius: 8px;
-  background: #fbfcfd;
-}
-
-.issue.high {
-  border-left-color: #c0392b;
-}
-
-.issue.medium {
-  border-left-color: #cc7a00;
-}
-
-.issue.low {
-  border-left-color: #8d97a3;
-}
-
-.issue-head {
+.review-legend {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
 }
 
-.issue h3 {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 620;
-}
-
-.issue-meta {
-  display: flex;
-  flex: none;
+.legend-item {
+  display: inline-flex;
   align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.legend-item strong {
+  min-width: 1.25rem;
+  padding: 0.02rem 0.35rem;
+  border-radius: 999px;
+  background: #eef1f4;
+  color: var(--text);
+  text-align: center;
+}
+
+.legend-line {
+  width: 1.4rem;
+  border-bottom: 3px solid #27845a;
+}
+
+.legend-item.inferred .legend-line {
+  border-bottom: 3px dashed #d68000;
+}
+
+.legend-item.unsupported .legend-line {
+  height: 0.7rem;
+  border: 0;
+  border-radius: 2px;
+  background: #ffd9d5;
+}
+
+.annotated-review,
+.action-plan {
+  margin-top: 1.35rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 680;
+}
+
+.section-heading > p {
+  max-width: 390px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.annotated-review .section-heading {
+  justify-content: flex-start;
+}
+
+.annotated-review .section-heading > p {
+  max-width: none;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.eyebrow {
+  margin: 0 0 0.15rem;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.annotated-document {
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fbfcfd;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.98rem;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+
+.claim-mark {
+  position: relative;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  cursor: help;
+}
+
+.claim-mark.grounded {
+  text-decoration: underline 3px solid #27845a;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 0.18em;
+}
+
+.claim-mark.inferred {
+  text-decoration: underline 3px dashed #d68000;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 0.18em;
+}
+
+.claim-mark.unsupported {
+  padding: 0.05em 0.12em;
+  background: #ffd9d5;
+  box-shadow: inset 0 -2px 0 #c83f34;
+}
+
+.claim-mark:hover,
+.claim-mark:focus-visible,
+.claim-mark[aria-expanded="true"] {
+  z-index: 10;
+  outline: none;
+  filter: brightness(0.97);
+}
+
+.claim-popover {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + 0.65rem);
+  left: 50%;
+  display: none;
+  width: min(340px, 80vw);
+  padding: 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(24, 31, 40, 0.16);
+  color: var(--text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  transform: translateX(-50%);
+}
+
+.claim-popover::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  background: #fff;
+  content: "";
+  transform: translate(-50%, -5px) rotate(45deg);
+}
+
+.claim-mark:hover .claim-popover,
+.claim-mark:focus-visible .claim-popover,
+.claim-mark[aria-expanded="true"] .claim-popover {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
-.area {
-  padding: 0.1rem 0.45rem;
+.popover-area,
+.priority {
+  padding: 0.1rem 0.42rem;
   border-radius: 999px;
   background: #eef1f4;
   color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.severity {
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
+  font-size: 0.64rem;
+  font-weight: 700;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
-.issue.high .severity {
-  color: #c0392b;
+.popover-explanation {
+  color: var(--muted);
 }
 
-.issue dl {
+.popover-label {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.claim-popover q,
+.unmatched-item q {
+  display: block;
+  padding-left: 0.65rem;
+  border-left: 2px solid var(--border-strong);
+  color: #353c45;
+  font-style: italic;
+}
+
+.unmatched {
+  margin-top: 0.8rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.unmatched summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.unmatched-list {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.3rem 0.85rem;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+.unmatched-item {
+  padding: 0.75rem;
+  border-left: 3px solid var(--border-strong);
+  background: #fbfcfd;
+}
+
+.unmatched-item.grounded {
+  border-left-color: #27845a;
+}
+
+.unmatched-item.inferred {
+  border-left-color: #d68000;
+}
+
+.unmatched-item.unsupported {
+  border-left-color: #c83f34;
+}
+
+.unmatched-item p {
+  margin: 0.3rem 0 0.5rem;
+}
+
+.action-list {
+  display: grid;
+  gap: 0.55rem;
   margin: 0;
-  font-size: 0.87rem;
+  padding: 0;
+  list-style: none;
 }
 
-.issue dt {
-  color: var(--muted);
-  font-weight: 600;
-  white-space: nowrap;
+.action-list label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfd;
+  cursor: pointer;
 }
 
-.issue dd {
-  margin: 0;
+.action-list input {
+  width: 16px;
+  height: 16px;
+  margin: 0.2rem 0 0;
+  accent-color: var(--accent);
 }
 
-.empty {
-  margin: 1rem 0 0;
-  color: var(--muted);
+.action-copy {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.action-title {
   font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.action-rationale {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 400;
+}
+
+.action-list input:checked + .action-copy {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.priority.high {
+  background: #fdeceb;
+  color: #a63124;
+}
+
+.priority.medium {
+  background: #fff3d8;
+  color: #8a5900;
+}
+
+.priority.low {
+  background: var(--ok-bg);
+  color: var(--ok-text);
 }
 
 /* Footer */
@@ -627,17 +861,39 @@ button[type="submit"]:disabled {
     width: 100%;
   }
 
-  .issue-head {
+  .section-heading {
     flex-direction: column;
+    align-items: flex-start;
     gap: 0.4rem;
   }
 
-  .issue dl {
-    grid-template-columns: 1fr;
-    gap: 0.15rem;
+  .section-heading > p {
+    text-align: left;
   }
 
-  .issue dt {
-    margin-top: 0.35rem;
+  .annotated-document {
+    padding: 1rem;
+  }
+
+  .claim-popover {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    transform: none;
+  }
+
+  .claim-popover::after {
+    display: none;
+  }
+
+  .action-list label {
+    grid-template-columns: auto 1fr;
+  }
+
+  .priority {
+    grid-column: 2;
+    justify-self: start;
   }
 }

@@ -8,7 +8,11 @@ const ALLOWED_ORIGINS = new Set([
 
 const MAX_TEXT_LENGTH = 24_000;
 const MAX_BODY_BYTES = 8_000_000;
-const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+const DEFAULT_WORKERS_AI_MODEL =
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const DEFAULT_OPENAI_MODEL = "azure.gpt-4.1-nano";
+const DEFAULT_OPENAI_API_URL =
+  "https://genai-sharedservice-americas.pwcinternal.com/v1/chat/completions";
 
 const SYSTEM_PROMPT =
   "You are a meticulous document reviewer. Use only the supplied reference as factual truth.";
@@ -24,30 +28,52 @@ const FACT_CHECK_SCHEMA = {
       type: "string",
       enum: ["pass", "issues_found"],
     },
-    issues: {
+    annotations: {
       type: "array",
       items: {
         type: "object",
         properties: {
           claim: { type: "string" },
-          severity: {
+          classification: {
             type: "string",
-            enum: ["high", "medium", "low"],
+            enum: ["grounded", "inferred", "unsupported"],
           },
-          problem: { type: "string" },
-          from_reference: { type: "string" },
+          explanation: { type: "string" },
+          reference_quote: { type: "string" },
           area: {
             type: "string",
             description:
               "The capability, sector, implementation type, or 'General' that this issue belongs to.",
           },
         },
-        required: ["claim", "severity", "problem", "from_reference", "area"],
+        required: [
+          "claim",
+          "classification",
+          "explanation",
+          "reference_quote",
+          "area",
+        ],
+        additionalProperties: false,
+      },
+    },
+    action_items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          action: { type: "string" },
+          priority: {
+            type: "string",
+            enum: ["high", "medium", "low"],
+          },
+          rationale: { type: "string" },
+        },
+        required: ["action", "priority", "rationale"],
         additionalProperties: false,
       },
     },
   },
-  required: ["summary", "verdict", "issues"],
+  required: ["summary", "verdict", "annotations", "action_items"],
   additionalProperties: false,
 };
 
@@ -66,12 +92,13 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && url.pathname === "/health") {
+      const provider = resolveProvider(env);
       return json(
         {
           ok: true,
-          provider: "openai",
-          model: env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
-          ready: Boolean(env.OPENAI_API_KEY),
+          provider,
+          model: resolveModel(provider, env),
+          ready: provider === "openai" ? true : Boolean(env.AI),
           sectors: Object.keys(SECTORS).length,
           capabilities: Object.keys(CAPABILITIES).length,
           implementations: Object.keys(IMPLEMENTATIONS).length,
@@ -111,12 +138,10 @@ export default {
       );
     }
 
-    if (!env.OPENAI_API_KEY) {
+    const provider = resolveProvider(env);
+    if (provider === "workers-ai" && !env.AI) {
       return json(
-        {
-          error:
-            "OPENAI_API_KEY is not set on the API. Add it as a Cloudflare Worker secret.",
-        },
+        { error: "The Cloudflare Workers AI binding is not configured." },
         500,
         cors
       );
@@ -140,18 +165,26 @@ export default {
     };
 
     try {
-      const parsed = await runOpenAI(
-        buildPrompt({ reference, deliverable, sector, capability, implementations }),
-        env
-      );
+      const prompt = buildPrompt({
+        reference,
+        deliverable,
+        sector,
+        capability,
+        implementations,
+      });
+      const parsed =
+        provider === "openai"
+          ? await runOpenAI(prompt, env)
+          : await runWorkersAI(prompt, env);
 
       return json(
         {
           summary: String(parsed.summary || ""),
           verdict: parsed.verdict === "pass" ? "pass" : "issues_found",
-          issues: normalizeIssues(parsed.issues),
-          provider: "openai",
-          model: env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
+          annotations: normalizeAnnotations(parsed.annotations),
+          action_items: normalizeActionItems(parsed.action_items),
+          provider,
+          model: resolveModel(provider, env),
           truncated,
         },
         200,
@@ -165,8 +198,19 @@ export default {
   },
 };
 
+// Workers AI needs no key, so it stays the default until an OpenAI secret exists.
+function resolveProvider(env) {
+  return env.OPENAI_API_KEY ? "openai" : "workers-ai";
+}
+
+function resolveModel(provider, env) {
+  return provider === "openai"
+    ? env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL
+    : env.WORKERS_AI_MODEL || DEFAULT_WORKERS_AI_MODEL;
+}
+
 async function runOpenAI(prompt, env) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch(env.OPENAI_API_URL || DEFAULT_OPENAI_API_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.OPENAI_API_KEY}`,
@@ -175,17 +219,11 @@ async function runOpenAI(prompt, env) {
     body: JSON.stringify({
       model: env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "fact_check",
-          strict: true,
-          schema: FACT_CHECK_SCHEMA,
+        {
+          role: "user",
+          content: `${SYSTEM_PROMPT}\n\n${prompt}`,
         },
-      },
+      ],
     }),
   });
 
@@ -201,7 +239,42 @@ async function runOpenAI(prompt, env) {
     throw new Error("OpenAI returned an empty response.");
   }
 
-  return JSON.parse(raw);
+  return parseModelJson(raw);
+}
+
+async function runWorkersAI(prompt, env) {
+  const output = await env.AI.run(
+    env.WORKERS_AI_MODEL || DEFAULT_WORKERS_AI_MODEL,
+    {
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: FACT_CHECK_SCHEMA,
+      },
+      max_tokens: 2000,
+    }
+  );
+
+  let parsed = output?.response;
+  if (typeof parsed === "string") {
+    parsed = JSON.parse(parsed);
+  }
+
+  if (!parsed) {
+    const raw = output?.choices?.[0]?.message?.content;
+    if (typeof raw === "string") {
+      parsed = JSON.parse(raw);
+    }
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Workers AI returned an empty or invalid response.");
+  }
+
+  return parsed;
 }
 
 function buildPrompt({ reference, deliverable, sector, capability, implementations }) {
@@ -217,7 +290,37 @@ Flag an issue when the document:
 
 Do not flag style, tone, missing polish, or reasonable synthesis that stays faithful to the reference.
 
-For each issue, set "area" to the most relevant sector, capability, or implementation lens listed below, or "General" when none applies.${buildLensGuidance(
+Return only valid JSON with this exact shape:
+{
+  "summary": "concise review summary",
+  "verdict": "pass" or "issues_found",
+  "annotations": [
+    {
+      "claim": "an exact, verbatim substring copied from the document under review",
+      "classification": "grounded", "inferred", or "unsupported",
+      "explanation": "brief reason for the classification",
+      "reference_quote": "the exact supporting or contradicting reference excerpt; use Not found in reference when absent",
+      "area": "the most relevant selected lens, or General"
+    }
+  ],
+  "action_items": [
+    {
+      "action": "short, specific next step beginning with a verb",
+      "priority": "high", "medium", or "low",
+      "rationale": "why this action matters"
+    }
+  ]
+}
+
+Classify each distinct factual claim in the document, up to 30 claims:
+- grounded: directly supported by the reference
+- inferred: plausible or reasonably inferred, but not stated directly
+- unsupported: contradicted by the reference or not supported enough to present as fact
+
+The "claim" must be copied exactly from the document so it can be highlighted. Never paraphrase it.
+Create 0 to 5 action items, proportional to the work needed. Focus actions on unsupported and inferred claims. Do not create busywork when everything is grounded.
+
+For each annotation, set "area" to the most relevant sector, capability, or implementation lens listed below, or "General" when none applies.${buildLensGuidance(
     sector,
     capability,
     implementations
@@ -230,20 +333,59 @@ DOCUMENT UNDER REVIEW:
 ${deliverable}`;
 }
 
-function normalizeIssues(issues) {
-  if (!Array.isArray(issues)) {
+function normalizeAnnotations(annotations) {
+  if (!Array.isArray(annotations)) {
     return [];
   }
 
-  return issues.map((issue) => ({
-    claim: String(issue?.claim || ""),
-    severity: ["high", "medium", "low"].includes(issue?.severity)
-      ? issue.severity
-      : "low",
-    problem: String(issue?.problem || ""),
-    from_reference: String(issue?.from_reference || ""),
-    area: String(issue?.area || "General"),
-  }));
+  return annotations
+    .slice(0, 30)
+    .map((annotation) => ({
+      claim: String(annotation?.claim || ""),
+      classification: ["grounded", "inferred", "unsupported"].includes(
+        annotation?.classification
+      )
+        ? annotation.classification
+        : "unsupported",
+      explanation: String(annotation?.explanation || ""),
+      reference_quote: String(
+        annotation?.reference_quote || "Not found in reference."
+      ),
+      area: String(annotation?.area || "General"),
+    }))
+    .filter((annotation) => annotation.claim);
+}
+
+function normalizeActionItems(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .slice(0, 5)
+    .map((item) => ({
+      action: String(item?.action || ""),
+      priority: ["high", "medium", "low"].includes(item?.priority)
+        ? item.priority
+        : "medium",
+      rationale: String(item?.rationale || ""),
+    }))
+    .filter((item) => item.action);
+}
+
+function parseModelJson(raw) {
+  const trimmed = String(raw).trim();
+  const withoutFence = trimmed
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+
+  try {
+    return JSON.parse(withoutFence);
+  } catch {
+    throw new Error(
+      "The AI service returned text instead of the expected JSON response."
+    );
+  }
 }
 
 function corsHeaders(origin) {

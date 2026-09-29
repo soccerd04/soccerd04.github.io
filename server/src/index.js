@@ -7,14 +7,15 @@ import { buildLensGuidance, CAPABILITIES, IMPLEMENTATIONS, SECTORS } from "./kno
 loadEnvFile(join(dirname(fileURLToPath(import.meta.url)), "..", ".env"));
 
 const PORT = Number(process.env.PORT) || 8787;
-const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+const DEFAULT_OPENAI_MODEL = "azure.gpt-4.1-nano";
+const DEFAULT_OPENAI_API_URL =
+  "https://genai-sharedservice-americas.pwcinternal.com/v1/chat/completions";
+const DEFAULT_WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MAX_TEXT_LENGTH = 24_000;
 const MAX_BODY_BYTES = 8_000_000;
 
 const ALLOWED_ORIGINS = new Set([
   "https://soccerd04.github.io",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
 ]);
 
 const SYSTEM_PROMPT =
@@ -31,36 +32,58 @@ const FACT_CHECK_SCHEMA = {
       type: "string",
       enum: ["pass", "issues_found"],
     },
-    issues: {
+    annotations: {
       type: "array",
       items: {
         type: "object",
         properties: {
           claim: { type: "string" },
-          severity: {
+          classification: {
             type: "string",
-            enum: ["high", "medium", "low"],
+            enum: ["grounded", "inferred", "unsupported"],
           },
-          problem: { type: "string" },
-          from_reference: { type: "string" },
+          explanation: { type: "string" },
+          reference_quote: { type: "string" },
           area: {
             type: "string",
             description:
               "The capability, sector, implementation type, or 'General' that this issue belongs to.",
           },
         },
-        required: ["claim", "severity", "problem", "from_reference", "area"],
+        required: [
+          "claim",
+          "classification",
+          "explanation",
+          "reference_quote",
+          "area",
+        ],
+        additionalProperties: false,
+      },
+    },
+    action_items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          action: { type: "string" },
+          priority: {
+            type: "string",
+            enum: ["high", "medium", "low"],
+          },
+          rationale: { type: "string" },
+        },
+        required: ["action", "priority", "rationale"],
         additionalProperties: false,
       },
     },
   },
-  required: ["summary", "verdict", "issues"],
+  required: ["summary", "verdict", "annotations", "action_items"],
   additionalProperties: false,
 };
 
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin;
-  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+  if (origin && !isAllowedOrigin(origin)) {
     sendJson(res, 403, { error: "Origin is not allowed." });
     return;
   }
@@ -77,12 +100,12 @@ const server = createServer(async (req, res) => {
 
   try {
     if (req.method === "GET" && url.pathname === "/health") {
-      const key = process.env.OPENAI_API_KEY;
+      const provider = resolveProvider();
       sendJson(res, 200, {
         ok: true,
-        provider: "openai",
-        model: process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
-        ready: Boolean(key),
+        provider: provider || "none",
+        model: provider ? resolveModel(provider) : null,
+        ready: Boolean(provider),
         sectors: Object.keys(SECTORS).length,
         capabilities: Object.keys(CAPABILITIES).length,
         implementations: Object.keys(IMPLEMENTATIONS).length,
@@ -115,10 +138,11 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    const provider = resolveProvider();
+    if (!provider) {
       sendJson(res, 500, {
         error:
-          "OPENAI_API_KEY is not set. Copy server/.env.example to server/.env and add your key.",
+          "No AI provider is configured. Copy server/.env.example to server/.env and set either CLOUDFLARE_API_TOKEN (with CLOUDFLARE_ACCOUNT_ID) or OPENAI_API_KEY.",
       });
       return;
     }
@@ -147,15 +171,18 @@ const server = createServer(async (req, res) => {
       capability,
       implementations,
     });
-    const parsed = await runOpenAI(prompt);
-    const model = process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL;
+    const parsed =
+      provider === "openai"
+        ? await runOpenAI(prompt)
+        : await runCloudflare(prompt);
 
     sendJson(res, 200, {
       summary: String(parsed.summary || ""),
       verdict: parsed.verdict === "pass" ? "pass" : "issues_found",
-      issues: normalizeIssues(parsed.issues),
-      provider: "openai",
-      model,
+      annotations: normalizeAnnotations(parsed.annotations),
+      action_items: normalizeActionItems(parsed.action_items),
+      provider,
+      model: resolveModel(provider),
       truncated,
     });
   } catch (error) {
@@ -169,29 +196,104 @@ server.listen(PORT, () => {
   console.log(`CheckThat API listening on http://localhost:${PORT}`);
 });
 
-async function runOpenAI(prompt) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
+// Cloudflare needs no OpenAI billing, so it is preferred until an OpenAI key exists.
+function resolveProvider() {
+  if (process.env.OPENAI_API_KEY) {
+    return "openai";
+  }
+  if (process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID) {
+    return "cloudflare";
+  }
+  return null;
+}
+
+function resolveModel(provider) {
+  return provider === "openai"
+    ? process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL
+    : process.env.WORKERS_AI_MODEL || DEFAULT_WORKERS_AI_MODEL;
+}
+
+// A failed fetch here is usually a corporate proxy or VPN, not a bad key.
+async function postJson(url, headers, body, label) {
+  try {
+    return await fetch(url, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    throw new Error(
+      `Could not reach ${label}. This is usually a VPN, proxy, or firewall blocking the connection rather than a problem with your key. (${
+        error instanceof Error ? error.message : "fetch failed"
+      })`
+    );
+  }
+}
+
+async function runCloudflare(prompt) {
+  const model = process.env.WORKERS_AI_MODEL || DEFAULT_WORKERS_AI_MODEL;
+  const response = await postJson(
+    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`,
+    { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+    {
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt },
       ],
       response_format: {
         type: "json_schema",
-        json_schema: {
-          name: "fact_check",
-          strict: true,
-          schema: FACT_CHECK_SCHEMA,
-        },
+        json_schema: FACT_CHECK_SCHEMA,
       },
-    }),
-  });
+      max_tokens: 2000,
+    },
+    "Cloudflare Workers AI"
+  );
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.success === false) {
+    const detail =
+      payload?.errors?.[0]?.message || response.statusText || "unknown error";
+    throw new Error(`Cloudflare Workers AI request failed: ${detail}`);
+  }
+
+  let parsed = payload?.result?.response;
+  if (typeof parsed === "string") {
+    parsed = JSON.parse(parsed);
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Cloudflare Workers AI returned an empty response.");
+  }
+
+  return parsed;
+}
+
+async function runOpenAI(prompt) {
+  const authHeader = process.env.AI_AUTH_HEADER || "Authorization";
+  const authScheme =
+    process.env.AI_AUTH_SCHEME === undefined
+      ? "Bearer"
+      : process.env.AI_AUTH_SCHEME.trim();
+  const authValue = authScheme
+    ? `${authScheme} ${process.env.OPENAI_API_KEY}`
+    : process.env.OPENAI_API_KEY;
+
+  const response = await postJson(
+    process.env.OPENAI_API_URL || DEFAULT_OPENAI_API_URL,
+    {
+      [authHeader]: authValue,
+    },
+    {
+      model: process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
+      messages: [
+        {
+          role: "user",
+          content: `${SYSTEM_PROMPT}\n\n${prompt}`,
+        },
+      ],
+    },
+    "the PwC GenAI Shared Service"
+  );
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -205,7 +307,7 @@ async function runOpenAI(prompt) {
     throw new Error("OpenAI returned an empty response.");
   }
 
-  return JSON.parse(raw);
+  return parseModelJson(raw);
 }
 
 function buildPrompt({ reference, deliverable, sector, capability, implementations }) {
@@ -221,7 +323,37 @@ Flag an issue when the document:
 
 Do not flag style, tone, missing polish, or reasonable synthesis that stays faithful to the reference.
 
-For each issue, set "area" to the most relevant sector, capability, or implementation lens listed below, or "General" when none applies.${buildLensGuidance(
+Return only valid JSON with this exact shape:
+{
+  "summary": "concise review summary",
+  "verdict": "pass" or "issues_found",
+  "annotations": [
+    {
+      "claim": "an exact, verbatim substring copied from the document under review",
+      "classification": "grounded", "inferred", or "unsupported",
+      "explanation": "brief reason for the classification",
+      "reference_quote": "the exact supporting or contradicting reference excerpt; use Not found in reference when absent",
+      "area": "the most relevant selected lens, or General"
+    }
+  ],
+  "action_items": [
+    {
+      "action": "short, specific next step beginning with a verb",
+      "priority": "high", "medium", or "low",
+      "rationale": "why this action matters"
+    }
+  ]
+}
+
+Classify each distinct factual claim in the document, up to 30 claims:
+- grounded: directly supported by the reference
+- inferred: plausible or reasonably inferred, but not stated directly
+- unsupported: contradicted by the reference or not supported enough to present as fact
+
+The "claim" must be copied exactly from the document so it can be highlighted. Never paraphrase it.
+Create 0 to 5 action items, proportional to the work needed. Focus actions on unsupported and inferred claims. Do not create busywork when everything is grounded.
+
+For each annotation, set "area" to the most relevant sector, capability, or implementation lens listed below, or "General" when none applies.${buildLensGuidance(
     sector,
     capability,
     implementations
@@ -234,20 +366,75 @@ DOCUMENT UNDER REVIEW:
 ${deliverable}`;
 }
 
-function normalizeIssues(issues) {
-  if (!Array.isArray(issues)) {
+function normalizeAnnotations(annotations) {
+  if (!Array.isArray(annotations)) {
     return [];
   }
 
-  return issues.map((issue) => ({
-    claim: String(issue?.claim || ""),
-    severity: ["high", "medium", "low"].includes(issue?.severity)
-      ? issue.severity
-      : "low",
-    problem: String(issue?.problem || ""),
-    from_reference: String(issue?.from_reference || ""),
-    area: String(issue?.area || "General"),
-  }));
+  return annotations
+    .slice(0, 30)
+    .map((annotation) => ({
+      claim: String(annotation?.claim || ""),
+      classification: ["grounded", "inferred", "unsupported"].includes(
+        annotation?.classification
+      )
+        ? annotation.classification
+        : "unsupported",
+      explanation: String(annotation?.explanation || ""),
+      reference_quote: String(
+        annotation?.reference_quote || "Not found in reference."
+      ),
+      area: String(annotation?.area || "General"),
+    }))
+    .filter((annotation) => annotation.claim);
+}
+
+function normalizeActionItems(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .slice(0, 5)
+    .map((item) => ({
+      action: String(item?.action || ""),
+      priority: ["high", "medium", "low"].includes(item?.priority)
+        ? item.priority
+        : "medium",
+      rationale: String(item?.rationale || ""),
+    }))
+    .filter((item) => item.action);
+}
+
+function parseModelJson(raw) {
+  const trimmed = String(raw).trim();
+  const withoutFence = trimmed
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+
+  try {
+    return JSON.parse(withoutFence);
+  } catch {
+    throw new Error(
+      "The AI service returned text instead of the expected JSON response."
+    );
+  }
+}
+
+function isAllowedOrigin(origin) {
+  if (ALLOWED_ORIGINS.has(origin)) {
+    return true;
+  }
+
+  try {
+    const url = new URL(origin);
+    return (
+      url.protocol === "http:" &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1")
+    );
+  } catch {
+    return false;
+  }
 }
 
 function applyCors(res, origin) {
@@ -255,7 +442,7 @@ function applyCors(res, origin) {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Max-Age", "86400");
   res.setHeader("Vary", "Origin");
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
 }
