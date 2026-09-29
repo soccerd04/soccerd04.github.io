@@ -13,6 +13,9 @@ const DEFAULT_WORKERS_AI_MODEL =
 const DEFAULT_OPENAI_MODEL = "azure.gpt-4.1-nano";
 const DEFAULT_OPENAI_API_URL =
   "https://genai-sharedservice-americas.pwcinternal.com/v1/chat/completions";
+// The public site is intentionally frontend-only. Keep this false unless an
+// approved public backend and data-handling policy are in place.
+const PUBLIC_AI_ENABLED = false;
 
 const SYSTEM_PROMPT =
   "You are a meticulous document reviewer. Use only the supplied reference as factual truth.";
@@ -92,13 +95,13 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && url.pathname === "/health") {
-      const provider = resolveProvider(env);
       return json(
         {
           ok: true,
-          provider,
-          model: resolveModel(provider, env),
-          ready: provider === "openai" ? true : Boolean(env.AI),
+          provider: "disabled",
+          model: null,
+          ready: false,
+          mode: "frontend-only",
           sectors: Object.keys(SECTORS).length,
           capabilities: Object.keys(CAPABILITIES).length,
           implementations: Object.keys(IMPLEMENTATIONS).length,
@@ -110,6 +113,17 @@ export default {
 
     if (request.method !== "POST" || url.pathname !== "/api/fact-check") {
       return json({ error: "Not found." }, 404, cors);
+    }
+
+    if (!PUBLIC_AI_ENABLED) {
+      return json(
+        {
+          error:
+            "Public AI review is disabled. Run CheckThat locally for a live review.",
+        },
+        503,
+        cors
+      );
     }
 
     const contentLength = Number(request.headers.get("Content-Length") || 0);

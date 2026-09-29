@@ -2,19 +2,13 @@
 
 CheckThat verifies a document against trusted reference material. Upload or paste the reference and the document to check, and the review flags claims that contradict the reference or that the reference does not support.
 
-The backend picks its provider automatically:
-
-- **Cloudflare Workers AI** by default. No OpenAI account or billing needed.
-- **OpenAI** as soon as an OpenAI key is present. Nothing else has to change.
-
 Never commit a key. `server/.env` is gitignored.
 
 ## Run locally
 
 1. Copy `server/.env.example` to `server/.env`.
-2. Fill in **one** provider:
-   - Cloudflare: set `CLOUDFLARE_API_TOKEN` (the account ID is prefilled).
-   - OpenAI: uncomment `OPENAI_API_KEY`. If set, it wins over Cloudflare.
+2. Put the approved company API key in `server/.env`. The example already
+   contains the shared-service URL and approved model name.
 3. Start both the API and the site:
 
 ```powershell
@@ -32,9 +26,10 @@ If a review fails with a "could not reach" message, a VPN, proxy, or firewall is
 
 ## Public site
 
-`https://soccerd04.github.io` serves the front end only. It calls the Cloudflare Worker `checkthat-api`, which runs Workers AI with no key. Adding an `OPENAI_API_KEY` secret to that Worker switches it to OpenAI.
+`https://soccerd04.github.io` is an interactive frontend preview. It does not
+send documents to an AI service. Live review is intentionally local-only.
 
-Pushing to `main` redeploys the site and the Worker through GitHub Actions.
+The public Worker review endpoint is disabled.
 
 ## Layout
 

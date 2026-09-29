@@ -20,8 +20,8 @@ wireFileInputs();
 
 if (import.meta.env.PROD && !apiBase) {
   setStatus(
-    "This public build is missing its API URL. Redeploy GitHub Pages after VITE_API_URL is set.",
-    true
+    "Interactive frontend preview — live AI review is available only when running CheckThat locally.",
+    false
   );
 }
 
@@ -138,7 +138,7 @@ form.addEventListener("submit", async (event) => {
   try {
     if (import.meta.env.PROD && !apiBase) {
       throw new Error(
-        "This public build is missing its verification API URL. Redeploy GitHub Pages to reconnect it."
+        "This public site is a frontend preview and does not send documents to an AI service. Run CheckThat locally for a live review."
       );
     }
 
